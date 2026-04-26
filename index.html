@@ -15,7 +15,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc, orderBy, query, where, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   // ══════════════════════════════════════════════════════
@@ -23,12 +23,12 @@
   // Cole aqui os valores que você copiou do Firebase Console
   // ══════════════════════════════════════════════════════
   const firebaseConfig = {
-    apiKey:            "AIzaSyCAmyJfxUg5y5fOrtk140K-0fzzbglEF0E",
-    authDomain:        "sibt-app.firebaseapp.com",
-    projectId:         "sibt-app",
-    storageBucket:     "sibt-app.firebasestorage.app",
-    messagingSenderId: "487604568579",
-    appId:             "1:487604568579:web:701437ba7f3260df334436"
+    apiKey:            "COLE_AQUI_SUA_apiKey",
+    authDomain:        "COLE_AQUI_SEU_authDomain",
+    projectId:         "COLE_AQUI_SEU_projectId",
+    storageBucket:     "COLE_AQUI_SEU_storageBucket",
+    messagingSenderId: "COLE_AQUI_SEU_messagingSenderId",
+    appId:             "COLE_AQUI_SEU_appId"
   };
   // ══════════════════════════════════════════════════════
 
@@ -44,6 +44,7 @@
     curScreen: 'home',
     pregFilter: 'all',
     finSubtab: 'resumo',
+    avisos: [],
     db, auth,
 
     // helpers de permissão
@@ -89,7 +90,7 @@
   // ── Login / Logout ───────────────────────────────────
   window.doLogin = async () => {
     try {
-      await signInWithRedirect(auth, gProvider);
+      await signInWithPopup(auth, gProvider);
     } catch(e) {
       console.error(e);
       alert('Erro ao entrar. Tente novamente.');
@@ -443,7 +444,13 @@ Valores: Igreja bíblica, cristocêntrica, acolhedora e discipuladora.</div>
         <div class="contato-row"><div class="contato-ico">👥</div><div><div class="contato-lbl">Facebook</div><a style="font-size:12px;font-weight:500;color:var(--ac);text-decoration:none" href="https://www.facebook.com/sibtabuleiro" target="_blank">facebook.com/sibtabuleiro</a></div></div>
       </div>
     </div>
-    <div class="card"><div class="ctitle">Avisos</div><div id="home-avisos" style="font-size:12px;color:var(--txt2);line-height:1.65">📢 Campanha de alimentos — traga até 04/Mai.<br>🙏 Oração especial toda quarta às 19h30.<br>📖 Escola Bíblica retoma no sábado.</div></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="ctitle" style="margin:0">Avisos</div>
+        <div id="avisos-add-btn"></div>
+      </div>
+      <div id="home-avisos"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
     <div class="card"><div class="ctitle">Próximos eventos</div><div id="h-events"><div class="loading"><div class="spinner"></div>Carregando...</div></div></div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
@@ -617,6 +624,26 @@ window.switchMemTab = (id, btn) => {
 
 // ── HOME ───────────────────────────────────────────────────
 async function renderHome(){
+  // Avisos dinâmicos do Firebase
+  const addBtn = $('avisos-add-btn');
+  if(addBtn) addBtn.innerHTML = A.isAdm()?'<button class="btn btn-sm btn-primary" onclick="openAddAviso()">+ Aviso</button>':'';
+  try {
+    const avisos = await FS.getAll('avisos');
+    const avisosEl = $('home-avisos');
+    if(avisosEl){
+      avisosEl.innerHTML = avisos.length
+        ? avisos.map(a=>`
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:.5px solid var(--bdr)">
+              <div style="font-size:12px;color:var(--txt2);line-height:1.6;flex:1">${a.emoji||'📢'} ${a.texto||''}</div>
+              ${A.isAdm()?`<button onclick="deleteAviso('${a.id}')" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:13px;flex-shrink:0;margin-left:8px">✕</button>`:''}
+            </div>`).join('')
+        : '<div style="font-size:12px;color:var(--txt3);padding:4px 0">Nenhum aviso no momento.</div>';
+    }
+  } catch(e){
+    const avisosEl = $('home-avisos');
+    if(avisosEl) avisosEl.innerHTML='<div style="font-size:12px;color:var(--txt3)">📢 Conecte o Firebase para ver os avisos.</div>';
+  }
+  // Eventos
   try {
     const events = await FS.getAll('events');
     $('h-events').innerHTML = events.slice(0,3).map(e=>`
@@ -803,6 +830,7 @@ async function renderFinancas(){
 
   const subtabs=`<div class="fin-subtab-row">
     <button class="fin-subtab ${A.finSubtab==='resumo'?'active':''}" onclick="setFinTab('resumo')">Resumo</button>
+    <button class="fin-subtab ${A.finSubtab==='balancetes'?'active':''}" onclick="setFinTab('balancetes')">Balancetes</button>
     <button class="fin-subtab ${A.finSubtab==='entradas'?'active':''}" onclick="setFinTab('entradas')">Entradas</button>
     <button class="fin-subtab ${A.finSubtab==='saidas'?'active':''}" onclick="setFinTab('saidas')">Saídas</button>
   </div>`;
@@ -814,6 +842,14 @@ async function renderFinancas(){
     const to = finance.filter(f=>f.is_out).reduce((a,b)=>a+(b.val||0),0);
     const pct = Math.min(100,Math.round(ti/META_VAL*100));
     const maxVal = Math.max(...balancetes.map(b=>b.entradas||0),1);
+
+    // helper para renderizar lista de documentos anexados
+    const renderDocs = (docs,tipo) => docs&&docs.length ? docs.map(d=>`
+      <div class="doc-item" style="margin-top:5px">
+        <div class="doc-ico ${d.tipo||tipo}">${d.tipo==='pdf'?'📄':d.tipo==='word'?'📝':'📊'}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div></div>
+        <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
+      </div>`).join('') : '';
 
     let mainContent='';
     if(A.finSubtab==='resumo'){
@@ -847,44 +883,83 @@ async function renderFinancas(){
             <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:2px;background:var(--red)"></div><span style="font-size:10px;color:var(--txt3)">Saídas</span></div>
           </div>
           <div class="fin-chart">${bars}</div>
+        </div>`;
+
+    } else if(A.finSubtab==='balancetes'){
+      mainContent=`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="ctitle" style="margin:0">Balancetes <span class="tag tag-mem">membros</span></div>
+          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddBal()">+ Novo balancete</button>':''}
         </div>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div class="ctitle" style="margin:0">Balancetes <span class="tag tag-mem">membros</span></div>
-            ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddBal()">+ Novo</button>':''}
-          </div>
-          ${balancetes.map(b=>`
-            <div style="background:var(--surf2);border-radius:9px;padding:10px;margin-bottom:7px">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-size:12px;font-weight:600;color:var(--txt)">${b.month||''}</div>
-                <div style="font-size:11px;color:${(b.entradas||0)-(b.saidas||0)>=0?'var(--green)':'var(--red)'};font-weight:600">${(b.entradas||0)-(b.saidas||0)>=0?'+':''}${fmt((b.entradas||0)-(b.saidas||0))}</div>
-              </div>
-              <div style="display:flex;gap:10px;margin-top:5px;font-size:11px">
-                <span style="color:var(--txt3)">Entradas: <b style="color:var(--green)">${fmt(b.entradas||0)}</b></span>
-                <span style="color:var(--txt3)">Saídas: <b style="color:var(--red)">${fmt(b.saidas||0)}</b></span>
-              </div>
-              <div class="prog-wrap" style="margin-top:6px"><div class="prog-bar" style="width:${Math.round((b.entradas||0)/((b.entradas||0)+(b.saidas||1))*100)}%;background:var(--green)"></div></div>
-              ${b.obs?`<div style="margin-top:5px;font-size:11px;color:var(--txt3);font-style:italic">${b.obs}</div>`:''}
-              ${A.canFin()?`<button class="btn btn-outline" style="margin-top:7px;font-size:11px" onclick="openAddDocBal('${b.id}')">📎 Anexar planilha</button>`:''}
-              ${b.doc_name?`<div class="doc-item" style="margin-top:5px"><div class="doc-ico xls">📊</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.doc_name}</div></div><button class="doc-btn" onclick="window.open('${b.doc_url}','_blank')">↓</button></div>`:''}
-            </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum balancete ainda.</div>'}
-        </div>
-        ${A.canFin()?`<div class="card">
-          <div class="ctitle">Lançamentos detalhados <span class="tag tag-adm">admin/teso</span></div>
-          ${finance.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${f.who||'Membro'} · ${f.date_ref||''}</div></div><div class="fin-val ${f.is_out?'out':'in'}">${f.is_out?'−':'+'} ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
-        </div>`:''}`;
+        ${balancetes.map(b=>`
+          <div style="background:var(--surf2);border-radius:9px;padding:10px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:12px;font-weight:600;color:var(--txt)">${b.month||''}</div>
+              <div style="font-size:11px;color:${(b.entradas||0)-(b.saidas||0)>=0?'var(--green)':'var(--red)'};font-weight:600">${(b.entradas||0)-(b.saidas||0)>=0?'+':''}${fmt((b.entradas||0)-(b.saidas||0))}</div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:5px;font-size:11px">
+              <span style="color:var(--txt3)">Entradas: <b style="color:var(--green)">${fmt(b.entradas||0)}</b></span>
+              <span style="color:var(--txt3)">Saídas: <b style="color:var(--red)">${fmt(b.saidas||0)}</b></span>
+            </div>
+            <div class="prog-wrap" style="margin-top:6px"><div class="prog-bar" style="width:${Math.round((b.entradas||0)/((b.entradas||0)+(b.saidas||1))*100)}%;background:var(--green)"></div></div>
+            ${b.obs?`<div style="margin-top:5px;font-size:11px;color:var(--txt3);font-style:italic">${b.obs}</div>`:''}
+            ${renderDocs(b.docs,'xls')}
+            ${A.canFin()?`<button class="btn btn-outline" style="margin-top:8px;font-size:11px" onclick="openAddDocBal('${b.id}')">📎 Anexar documento</button>`:''}
+          </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum balancete ainda.</div>'}
+      </div>`;
 
     } else if(A.finSubtab==='entradas'){
       const ins=finance.filter(f=>!f.is_out);
-      mainContent=`<div class="card"><div class="ctitle">Entradas detalhadas</div>
-        ${ins.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${A.canFin()?f.who:'Membro'} · ${f.date_ref||''}</div></div><div class="fin-val in">+ ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhuma entrada lançada ainda.</div>'}
-        <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px"><div style="font-size:13px;font-weight:600;color:var(--txt)">Total</div><div style="font-size:15px;font-weight:700;color:var(--green)">${fmt(ti)}</div></div>
+      // busca documento de entradas do Firestore
+      const docsEntradas = await FS.getAll('docs_financeiros').catch(()=>[]);
+      const docEnt = docsEntradas.filter(d=>d.tipo==='entradas');
+      mainContent=`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="ctitle" style="margin:0">Entradas detalhadas</div>
+          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddDocFinanceiro(\'entradas\')">📎 Lançar documento</button>':''}
+        </div>
+        ${docEnt.map(d=>`
+          <div class="doc-item" style="margin-bottom:8px;background:var(--greens);border-radius:9px;padding:9px 11px">
+            <div class="doc-ico xls">📊</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
+              <div style="font-size:10px;color:var(--txt3)">${d.date_ref||''}</div>
+            </div>
+            <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
+          </div>`).join('')}
+        <div style="border-top:.5px solid var(--bdr);padding-top:8px;margin-top:4px">
+          ${ins.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${A.canFin()?f.who:'Membro'} · ${f.date_ref||''}</div></div><div class="fin-val in">+ ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px">
+          <div style="font-size:13px;font-weight:600;color:var(--txt)">Total de entradas</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">${fmt(ti)}</div>
+        </div>
       </div>`;
     } else {
       const outs=finance.filter(f=>f.is_out);
-      mainContent=`<div class="card"><div class="ctitle">Saídas detalhadas</div>
-        ${outs.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${f.date_ref||''}</div></div><div class="fin-val out">− ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhuma saída lançada ainda.</div>'}
-        <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px"><div style="font-size:13px;font-weight:600;color:var(--txt)">Total</div><div style="font-size:15px;font-weight:700;color:var(--red)">${fmt(to)}</div></div>
+      const docsFinanceiros = await FS.getAll('docs_financeiros').catch(()=>[]);
+      const docSaid = docsFinanceiros.filter(d=>d.tipo==='saidas');
+      mainContent=`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="ctitle" style="margin:0">Saídas detalhadas</div>
+          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddDocFinanceiro(\'saidas\')">📎 Lançar documento</button>':''}
+        </div>
+        ${docSaid.map(d=>`
+          <div class="doc-item" style="margin-bottom:8px;background:var(--reds);border-radius:9px;padding:9px 11px">
+            <div class="doc-ico xls">📊</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
+              <div style="font-size:10px;color:var(--txt3)">${d.date_ref||''}</div>
+            </div>
+            <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
+          </div>`).join('')}
+        <div style="border-top:.5px solid var(--bdr);padding-top:8px;margin-top:4px">
+          ${outs.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${f.date_ref||''}</div></div><div class="fin-val out">− ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px">
+          <div style="font-size:13px;font-weight:600;color:var(--txt)">Total de saídas</div>
+          <div style="font-size:15px;font-weight:700;color:var(--red)">${fmt(to)}</div>
+        </div>
       </div>`;
     }
     $('fin-content').innerHTML=pixHTML+subtabs+mainContent;
@@ -1156,6 +1231,87 @@ window.saveDocAta = async (ataId) => {
   const name=$('da-n').value.trim(); if(!name)return;
   await FS.update('atas',ataId,{doc_name:name,doc_url:$('da-u').value||'#'});
   closeModal(); renderAtas();
+};
+
+// ── AVISOS ─────────────────────────────────────────────────
+window.openAddAviso = () => {
+  $('modal-body').innerHTML=`
+    <h3>Novo aviso</h3>
+    <label>Emoji (opcional)</label>
+    <select id="av-emoji">
+      <option value="📢">📢 Anúncio</option>
+      <option value="🙏">🙏 Oração</option>
+      <option value="📖">📖 Estudo</option>
+      <option value="🎉">🎉 Celebração</option>
+      <option value="⚠️">⚠️ Atenção</option>
+      <option value="🎵">🎵 Louvor</option>
+      <option value="❤️">❤️ Outros</option>
+    </select>
+    <label>Texto do aviso</label>
+    <textarea id="av-texto" placeholder="Ex: Culto especial neste domingo às 19h no templo principal." style="min-height:80px"></textarea>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="saveAviso()">Publicar aviso</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+window.saveAviso = async () => {
+  const texto=$('av-texto').value.trim(); if(!texto)return;
+  await FS.add('avisos',{emoji:$('av-emoji').value, texto});
+  closeModal(); renderHome();
+};
+window.deleteAviso = async (id) => {
+  if(!confirm('Remover este aviso?'))return;
+  await FS.del('avisos', id);
+  renderHome();
+};
+
+// ── DOCUMENTOS FINANCEIROS ─────────────────────────────────
+window.openAddDocFinanceiro = (tipo) => {
+  const label = tipo==='entradas'?'Documento de entradas':'Documento de saídas';
+  $('modal-body').innerHTML=`
+    <h3>${label}</h3>
+    <label>Nome do documento</label>
+    <input id="df-n" placeholder="Ex: Relatório de Entradas — Maio 2026">
+    <label>Tipo</label>
+    <select id="df-t"><option value="pdf">PDF</option><option value="xls">Planilha (.xlsx)</option><option value="word">Word (.docx)</option></select>
+    <label>Período de referência</label>
+    <input id="df-d" placeholder="Ex: Maio 2026">
+    <label>Link do arquivo (Google Drive, OneDrive...)</label>
+    <input id="df-u" placeholder="https://drive.google.com/...">
+    <div class="upload-area"><div style="font-size:12px;color:var(--txt3);line-height:1.5">📎 Cole o link público do arquivo acima<br><span style="font-size:10px">Google Drive: Compartilhar → "Qualquer pessoa com o link"</span></div></div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="saveDocFinanceiro('${tipo}')">Anexar documento</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+window.saveDocFinanceiro = async (tipo) => {
+  const name=$('df-n').value.trim(); if(!name)return;
+  await FS.add('docs_financeiros',{
+    tipo, name,
+    file_tipo: $('df-t').value,
+    date_ref: $('df-d').value.trim(),
+    url: $('df-u').value||'#'
+  });
+  closeModal(); renderFinancas();
+};
+
+window.openAddDocBal = (balId) => {
+  $('modal-body').innerHTML=`
+    <h3>Anexar documento ao balancete</h3>
+    <label>Nome do arquivo</label><input id="db-n" placeholder="Balancete_Maio.xlsx">
+    <label>Tipo</label>
+    <select id="db-t"><option value="xls">Planilha (.xlsx)</option><option value="pdf">PDF</option><option value="word">Word (.docx)</option></select>
+    <label>Link (Google Drive, OneDrive...)</label><input id="db-u" placeholder="https://drive.google.com/...">
+    <div class="upload-area"><div style="font-size:12px;color:var(--txt3);line-height:1.5">📎 Cole o link público do arquivo</div></div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="saveDocBal('${balId}')">Anexar</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+window.saveDocBal = async (balId) => {
+  const name=$('db-n').value.trim(); if(!name)return;
+  const bal = await FS.getAll('balancetes').then(bs=>bs.find(b=>b.id===balId));
+  const docs = bal?.docs||[];
+  docs.push({name, tipo:$('db-t').value, url:$('db-u').value||'#'});
+  await FS.update('balancetes', balId, {docs});
+  closeModal(); renderFinancas();
 };
 
 // ── FAB ────────────────────────────────────────────────────
