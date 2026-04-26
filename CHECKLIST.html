@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist de Publicação — App SIBT</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:#f0f4f8;color:#1a1a2e;min-height:100vh;padding:20px}
+  .wrap{max-width:680px;margin:0 auto}
+  .header{background:#1a5fa0;color:#fff;border-radius:16px;padding:24px;margin-bottom:20px}
+  .header h1{font-size:22px;font-weight:600;margin-bottom:4px}
+  .header p{font-size:13px;opacity:.8}
+  .progress-bar{background:rgba(255,255,255,.2);border-radius:99px;height:8px;margin-top:14px;overflow:hidden}
+  .progress-fill{background:#fff;border-radius:99px;height:100%;transition:width .4s}
+  .progress-text{font-size:12px;margin-top:6px;opacity:.8}
+  .section{margin-bottom:16px}
+  .section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#888da0;margin-bottom:8px;padding-left:4px}
+  .step{background:#fff;border-radius:12px;border:.5px solid #e2e4e8;padding:14px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all .15s}
+  .step:hover{border-color:#1a5fa0;background:#f8fbff}
+  .step.done{background:#f0fbf5;border-color:#1a9268}
+  .step-check{width:22px;height:22px;border-radius:50%;border:2px solid #e2e4e8;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .2s;font-size:12px}
+  .step.done .step-check{background:#1a9268;border-color:#1a9268;color:#fff}
+  .step-num{width:22px;height:22px;border-radius:50%;background:#e5f3fb;color:#1a5fa0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+  .step-content{flex:1}
+  .step-title{font-size:13px;font-weight:600;color:#1a1a2e;margin-bottom:2px}
+  .step.done .step-title{color:#1a9268}
+  .step-desc{font-size:12px;color:#44475a;line-height:1.5}
+  .step-link{display:inline-block;margin-top:6px;padding:4px 10px;background:#e5f3fb;color:#1a5fa0;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none}
+  .step-link:hover{background:#1a5fa0;color:#fff}
+  .step-code{background:#f4f5f7;border-radius:6px;padding:8px 10px;margin-top:8px;font-family:monospace;font-size:11px;color:#0c3d6b;line-height:1.6;border-left:3px solid #1a5fa0}
+  .special{background:#fff8e8;border:.5px solid #e0c060;border-radius:12px;padding:14px 16px;margin-bottom:8px}
+  .special-title{font-size:13px;font-weight:600;color:#b87c1a;margin-bottom:4px}
+  .special-desc{font-size:12px;color:#44475a;line-height:1.5}
+  .footer{text-align:center;padding:20px;font-size:12px;color:#888da0}
+  .reset-btn{display:block;width:100%;padding:10px;background:#fff;border:1px solid #e2e4e8;border-radius:10px;font-size:13px;color:#888da0;cursor:pointer;margin-top:8px;font-family:'DM Sans',sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>✅ Checklist — App SIBT</h1>
+    <p>Siga os passos abaixo para publicar o app da Segunda Igreja Batista do Tabuleiro</p>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="prog-text">0 de 15 passos concluídos</div>
+  </div>
+
+  <div class="special">
+    <div class="special-title">⚠️ Antes de começar — leia isso</div>
+    <div class="special-desc">Você vai precisar abrir alguns sites. Em cada passo, há um link azul que abre o site certo. Marque o passo como ✓ quando terminar cada um. Pode pausar e continuar depois — o progresso fica salvo.</div>
+  </div>
+
+  <!-- FIREBASE -->
+  <div class="section">
+    <div class="section-title">Parte 1 — Configurar o Firebase (banco de dados)</div>
+
+    <div class="step" onclick="toggle(this)" data-id="1">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Criar conta no Firebase com o Gmail da SIBT</div>
+        <div class="step-desc">Entre com o Gmail igrejasibt@gmail.com e crie um projeto chamado <b>SIBT App</b>.</div>
+        <a class="step-link" href="https://firebase.google.com" target="_blank">Abrir firebase.google.com ↗</a>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="2">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Ativar o login pelo Gmail</div>
+        <div class="step-desc">No projeto → Authentication → Provedores de login → Google → Ativar → E-mail de suporte: igrejasibt@gmail.com → Salvar.</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="3">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Criar o banco de dados (Firestore)</div>
+        <div class="step-desc">No projeto → Firestore Database → Criar banco de dados → Modo produção → Região: <b>southamerica-east1</b> → Ativar.</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="4">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Criar as coleções no banco de dados</div>
+        <div class="step-desc">Clique em "+ Iniciar coleção" e crie uma por vez, com um documento vazio (botão Auto-ID) em cada:<br><br>
+        <b>members · events · finance · balancetes · atas · turmas · materiais · pregacoes · inscricoes</b><br><br>
+        São 9 coleções no total. Após criar, pode apagar o documento vazio de exemplo.</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="5">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Configurar as regras de segurança</div>
+        <div class="step-desc">Firestore → aba "Regras" → apague tudo e cole o conteúdo do arquivo <b>firestore.rules</b> que está na pasta sibt-app. Clique em Publicar.</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="6">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <div class="step-title">Copiar as credenciais do Firebase</div>
+        <div class="step-desc">Engrenagem → Configurações do projeto → role até "Seus aplicativos" → clique em "&lt;/&gt;" → apelido: <b>sibt-web</b> → Registrar. Copie os valores do bloco <b>firebaseConfig</b> e guarde num bloco de notas.</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+  </div>
+
+  <!-- CÓDIGO -->
+  <div class="section">
+    <div class="section-title">Parte 2 — Editar o arquivo do app</div>
+
+    <div class="step" onclick="toggle(this)" data-id="7">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <div class="step-title">Abrir a pasta sibt-app no VS Code</div>
+        <div class="step-desc">Instale o VS Code se ainda não tiver. Abra o programa → File → Open Folder → selecione a pasta <b>sibt-app</b> que você recebeu.</div>
+        <a class="step-link" href="https://code.visualstudio.com" target="_blank">Baixar VS Code ↗</a>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="8">
+      <div class="step-num">8</div>
+      <div class="step-content">
+        <div class="step-title">Colar as credenciais no arquivo index.html</div>
+        <div class="step-desc">No VS Code, abra o arquivo <b>index.html</b>. Use Ctrl+F para buscar: <code>COLE_AQUI_SUA_apiKey</code><br><br>
+        Substitua cada valor COLE_AQUI_... pelo valor real que você copiou no passo anterior. São 6 valores para substituir.</div>
+        <div class="step-code">apiKey:            "AIzaSy..."  ← cole o valor real
+authDomain:        "sibt-app.firebaseapp.com"
+projectId:         "sibt-app"
+storageBucket:     "sibt-app.appspot.com"
+messagingSenderId: "12345..."
+appId:             "1:12345..."</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+  </div>
+
+  <!-- GITHUB -->
+  <div class="section">
+    <div class="section-title">Parte 3 — Publicar no GitHub</div>
+
+    <div class="step" onclick="toggle(this)" data-id="9">
+      <div class="step-num">9</div>
+      <div class="step-content">
+        <div class="step-title">Criar conta no GitHub</div>
+        <div class="step-desc">Crie com o Gmail da SIBT. Nome de usuário sugerido: <b>sibtabuleiro</b>. Confirme o e-mail.</div>
+        <a class="step-link" href="https://github.com/signup" target="_blank">Criar conta no GitHub ↗</a>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="10">
+      <div class="step-num">10</div>
+      <div class="step-content">
+        <div class="step-title">Criar repositório no GitHub</div>
+        <div class="step-desc">Clique em "New repository" → Nome: <b>sibt-app</b> → Public → Create repository. Copie o endereço (ex: github.com/sibtabuleiro/sibt-app).</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="11">
+      <div class="step-num">11</div>
+      <div class="step-content">
+        <div class="step-title">Instalar o Node.js</div>
+        <div class="step-desc">Baixe e instale a versão LTS. Após instalar, abra o Prompt de Comando e confirme digitando <code>node --version</code>.</div>
+        <a class="step-link" href="https://nodejs.org" target="_blank">Baixar Node.js ↗</a>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="12">
+      <div class="step-num">12</div>
+      <div class="step-content">
+        <div class="step-title">Subir o código para o GitHub</div>
+        <div class="step-desc">No VS Code, abra o Terminal (menu Terminal → New Terminal) e execute os comandos abaixo um por vez:</div>
+        <div class="step-code">git init
+git add .
+git commit -m "App SIBT com Firebase"
+git branch -M main
+git remote add origin https://github.com/sibtabuleiro/sibt-app.git
+git push -u origin main</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+  </div>
+
+  <!-- VERCEL -->
+  <div class="section">
+    <div class="section-title">Parte 4 — Publicar online no Vercel</div>
+
+    <div class="step" onclick="toggle(this)" data-id="13">
+      <div class="step-num">13</div>
+      <div class="step-content">
+        <div class="step-title">Publicar no Vercel (3 cliques)</div>
+        <div class="step-desc">Entre com o GitHub → Add New Project → selecione <b>sibt-app</b> → Import → Deploy. Aguarde 1 minuto. O app estará em: <b>sibt-app.vercel.app</b></div>
+        <a class="step-link" href="https://vercel.com" target="_blank">Abrir Vercel ↗</a>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+
+    <div class="step" onclick="toggle(this)" data-id="14">
+      <div class="step-num">14</div>
+      <div class="step-content">
+        <div class="step-title">Autorizar o domínio no Firebase</div>
+        <div class="step-desc">Firebase → Authentication → Settings → Domínios autorizados → Adicionar domínio → cole: <b>sibt-app.vercel.app</b> → Adicionar. Sem isso o login pelo Gmail não funciona.</div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="section">
+    <div class="section-title">Parte 5 — Definir você como administrador</div>
+
+    <div class="step" onclick="toggle(this)" data-id="15">
+      <div class="step-num">15</div>
+      <div class="step-content">
+        <div class="step-title">Entrar no app e se tornar admin</div>
+        <div class="step-desc">
+          1. Abra o app: <b>sibt-app.vercel.app</b><br>
+          2. Toque em "Entrar" → "Entrar com Google" → selecione o Gmail<br>
+          3. Volte ao Firebase → Firestore → coleção <b>members</b><br>
+          4. Encontre seu documento → clique em Editar → adicione o campo:<br>
+          &nbsp;&nbsp;<b>perm</b> (tipo: string) = <b>admin</b><br>
+          5. Salve → reabra o app → você é administrador! 🎉
+        </div>
+      </div>
+      <div class="step-check">✓</div>
+    </div>
+  </div>
+
+  <div class="special">
+    <div class="special-title">🎉 Pronto! App publicado.</div>
+    <div class="special-desc">Para instalar no celular como app:<br><br>
+    <b>Android:</b> Chrome → três pontos → "Adicionar à tela inicial"<br>
+    <b>iPhone:</b> Safari → botão compartilhar → "Adicionar à Tela de Início"</div>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">↺ Reiniciar checklist</button>
+  <div class="footer">Checklist do App SIBT — Segunda Igreja Batista do Tabuleiro · Maceió, AL</div>
+</div>
+
+<script>
+  const TOTAL = 15;
+  function toggle(el){
+    el.classList.toggle('done');
+    save();
+    updateProgress();
+  }
+  function save(){
+    const done=[];
+    document.querySelectorAll('.step.done').forEach(s=>done.push(s.dataset.id));
+    localStorage.setItem('sibt-checklist',JSON.stringify(done));
+  }
+  function load(){
+    try{
+      const done=JSON.parse(localStorage.getItem('sibt-checklist')||'[]');
+      done.forEach(id=>{
+        const el=document.querySelector(`.step[data-id="${id}"]`);
+        if(el)el.classList.add('done');
+      });
+    }catch(e){}
+    updateProgress();
+  }
+  function updateProgress(){
+    const done=document.querySelectorAll('.step.done').length;
+    const pct=Math.round(done/TOTAL*100);
+    document.getElementById('prog-fill').style.width=pct+'%';
+    document.getElementById('prog-text').textContent=done+' de '+TOTAL+' passos concluídos ('+pct+'%)';
+  }
+  function resetAll(){
+    if(confirm('Reiniciar o checklist e desmarcar todos os passos?')){
+      document.querySelectorAll('.step.done').forEach(s=>s.classList.remove('done'));
+      localStorage.removeItem('sibt-checklist');
+      updateProgress();
+    }
+  }
+  load();
+</script>
+</body>
+</html>
