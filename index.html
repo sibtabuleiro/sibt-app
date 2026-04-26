@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1a5fa0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -146,18 +146,18 @@
   --surf:#ffffff;--surf2:#f4f5f7;--bdr:#e2e4e8;
   --txt:#1a1a2e;--txt2:#44475a;--txt3:#888da0;--r:13px;
 }
-body{font-family:'DM Sans',sans-serif;background:#dde3ee;display:flex;justify-content:center;min-height:100vh;padding:0}
-#app{width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;background:var(--surf2);position:relative;box-shadow:0 0 40px rgba(0,0,0,.15)}
+body{font-family:'DM Sans',sans-serif;background:#dde3ee;display:flex;justify-content:center;min-height:100vh;padding:0;font-size:16px}
+#app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;background:var(--surf2);position:relative;box-shadow:0 0 40px rgba(0,0,0,.15)}
 
 /* TOP BAR */
-.top-bar{background:var(--ac);color:#fff;padding:14px 14px 16px;flex-shrink:0}
+.top-bar{background:var(--ac);color:#fff;padding:18px 18px 20px;flex-shrink:0}
 .top-row{display:flex;justify-content:space-between;align-items:flex-start}
-.church-name{font-family:'DM Serif Display',serif;font-size:15px;line-height:1.25}
-.church-sub{font-size:10px;opacity:.7;margin-top:2px}
-.user-pill{background:rgba(255,255,255,.2);border-radius:20px;padding:4px 10px 4px 5px;display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;margin-left:8px}
-.user-pill .av{width:24px;height:24px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0}
-.user-pill .uname{font-size:11px;font-weight:500;white-space:nowrap}
-.role-badge{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600}
+.church-name{font-family:'DM Serif Display',serif;font-size:19px;line-height:1.25}
+.church-sub{font-size:13px;opacity:.7;margin-top:2px}
+.user-pill{background:rgba(255,255,255,.2);border-radius:20px;padding:5px 12px 5px 6px;display:flex;align-items:center;gap:7px;cursor:pointer;flex-shrink:0;margin-left:8px}
+.user-pill .av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.user-pill .uname{font-size:13px;font-weight:500;white-space:nowrap}
+.role-badge{display:inline-block;margin-top:6px;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600}
 .rb-pub{background:rgba(255,255,255,.15);color:#fff}
 .rb-mem{background:#ffd98a;color:#7a4800}
 .rb-adm{background:#a8f0d4;color:#0a5738}
@@ -168,62 +168,63 @@ body{font-family:'DM Sans',sans-serif;background:#dde3ee;display:flex;justify-co
 /* NAV */
 .nav{background:var(--surf);display:flex;border-bottom:.5px solid var(--bdr);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
 .nav::-webkit-scrollbar{display:none}
-.nav-btn{flex-shrink:0;padding:8px 4px 7px;font-size:9px;font-weight:500;color:var(--txt3);background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'DM Sans',sans-serif;min-width:52px;transition:color .15s}
-.nav-btn .ico{font-size:15px}
+.nav-btn{flex-shrink:0;padding:10px 5px 9px;font-size:11px;font-weight:500;color:var(--txt3);background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;min-width:58px;transition:color .15s}
+.nav-btn .ico{font-size:18px}
 .nav-btn.active{color:var(--ac)}
-.nav-btn .lk{font-size:7px;opacity:.5}
+.nav-btn .lk{font-size:9px;opacity:.5}
 
 /* SCREENS */
-.screen{display:none;flex-direction:column;flex:1;overflow-y:auto;padding:11px;gap:9px}
+.screen{display:none;flex-direction:column;flex:1;overflow-y:auto;padding:14px;gap:11px}
 .screen.active{display:flex}
 
 /* CARDS */
-.card{background:var(--surf);border-radius:var(--r);border:.5px solid var(--bdr);padding:11px 13px}
-.ctitle{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:8px}
-.srow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.sbox{background:var(--surf2);border-radius:9px;padding:9px;display:flex;flex-direction:column;gap:3px}
-.slbl{font-size:10px;color:var(--txt3)}
-.sval{font-size:17px;font-weight:600;color:var(--txt)}
+.card{background:var(--surf);border-radius:var(--r);border:.5px solid var(--bdr);padding:14px 16px}
+.ctitle{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin-bottom:10px}
+.srow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.sbox{background:var(--surf2);border-radius:9px;padding:11px;display:flex;flex-direction:column;gap:3px}
+.slbl{font-size:12px;color:var(--txt3)}
+.sval{font-size:21px;font-weight:600;color:var(--txt)}
 .sval.g{color:var(--green)}.sval.r{color:var(--red)}.sval.a{color:var(--ac)}
-.prog-wrap{height:5px;background:var(--surf2);border-radius:99px;overflow:hidden;margin-top:4px}
+.prog-wrap{height:6px;background:var(--surf2);border-radius:99px;overflow:hidden;margin-top:5px}
 .prog-bar{height:100%;border-radius:99px;transition:width .5s}
 
 /* ROWS */
-.fin-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:.5px solid var(--bdr)}
+.fin-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr)}
 .fin-row:last-child{border-bottom:none}
-.fin-lbl{font-weight:500;color:var(--txt);font-size:12px}
-.fin-sub{font-size:10px;color:var(--txt3)}
-.fin-val{font-weight:600;font-size:12px}
+.fin-lbl{font-weight:500;color:var(--txt);font-size:14px}
+.fin-sub{font-size:12px;color:var(--txt3)}
+.fin-val{font-weight:600;font-size:14px}
 .fin-val.in{color:var(--green)}.fin-val.out{color:var(--red)}
-.evt-item{display:flex;gap:9px;padding:8px 0;border-bottom:.5px solid var(--bdr)}
+.evt-item{display:flex;gap:11px;padding:10px 0;border-bottom:.5px solid var(--bdr)}
 .evt-item:last-child{border-bottom:none}
-.evt-date{background:var(--acs);color:var(--acd);border-radius:8px;width:36px;height:36px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:500}
-.evt-day{font-size:15px;font-weight:600;line-height:1}
-.m-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:.5px solid var(--bdr)}
+.evt-date{background:var(--acs);color:var(--acd);border-radius:9px;width:44px;height:44px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:500}
+.evt-day{font-size:19px;font-weight:600;line-height:1}
+.m-item{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:.5px solid var(--bdr)}
 .m-item:last-child{border-bottom:none}
-.m-av{width:32px;height:32px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
-.m-name{font-size:12px;font-weight:500;color:var(--txt)}
-.m-sub{font-size:11px;color:var(--txt3)}
-.bdg{margin-left:auto;font-size:9px;font-weight:600;padding:2px 6px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.m-av{width:36px;height:36px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.m-name{font-size:14px;font-weight:500;color:var(--txt)}
+.m-sub{font-size:12px;color:var(--txt3)}
+.bdg{margin-left:auto;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;flex-shrink:0;white-space:nowrap}
 .bdg-active{background:var(--greens);color:var(--green)}
 .bdg-teso{background:#fde8ff;color:#6b21a8}
 .bdg-sec{background:#ffe4e6;color:#9f1239}
 .bdg-prof{background:#fef9c3;color:#713f12}
 .bdg-adm{background:var(--acs);color:var(--ac)}
-.tag{display:inline-block;padding:2px 6px;border-radius:20px;font-size:9px;font-weight:600;margin-left:4px}
+.tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:5px}
 .tag-pub{background:var(--acs);color:var(--ac)}
 .tag-mem{background:#f0e8ff;color:#5b21b6}
 .tag-adm{background:var(--greens);color:var(--green)}
 
 /* BUTTONS */
-.btn{width:100%;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity .1s}
+.btn{width:100%;padding:12px;border-radius:11px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:opacity .1s}
 .btn:active{opacity:.85}
 .btn-primary{background:var(--ac);color:#fff}
 .btn-outline{background:var(--surf2);color:var(--ac);border:.5px solid var(--bdr)}
 .btn-danger{background:var(--reds);color:var(--red)}
-.btn-google{background:#fff;color:#444;border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px}
-.btn-sm{padding:5px 10px;font-size:11px;width:auto;border-radius:7px}
-.btn-cancel{width:100%;margin-top:7px;padding:9px;background:none;color:var(--txt3);border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-google{background:#fff;color:#444;border:.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px}
+.btn-sm{padding:7px 13px;font-size:13px;width:auto;border-radius:8px}
+.btn-cancel{width:100%;margin-top:8px;padding:11px;background:none;color:var(--txt3);border:none;border-radius:11px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-remove{padding:5px 10px;font-size:12px;font-weight:600;background:var(--reds);color:var(--red);border:none;border-radius:7px;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0}
 
 /* LOCKED */
 .locked{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px 18px;text-align:center}
@@ -235,12 +236,12 @@ body{font-family:'DM Sans',sans-serif;background:#dde3ee;display:flex;justify-co
 /* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
-.modal{background:var(--surf);border-radius:20px 20px 0 0;padding:18px 18px 32px;width:100%;max-width:430px;max-height:90vh;overflow-y:auto}
-.modal h3{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--txt)}
-.modal label{font-size:11px;color:var(--txt3);display:block;margin-bottom:3px;margin-top:9px}
-.modal input,.modal select,.modal textarea{width:100%;padding:9px 11px;border:.5px solid var(--bdr);border-radius:9px;font-size:13px;color:var(--txt);background:var(--surf2);font-family:'DM Sans',sans-serif;outline:none}
-.modal textarea{resize:vertical;min-height:70px;line-height:1.5}
-.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.modal{background:var(--surf);border-radius:20px 20px 0 0;padding:22px 20px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:14px;color:var(--txt)}
+.modal label{font-size:13px;color:var(--txt3);display:block;margin-bottom:3px;margin-top:10px}
+.modal input,.modal select,.modal textarea{width:100%;padding:11px 13px;border:.5px solid var(--bdr);border-radius:10px;font-size:15px;color:var(--txt);background:var(--surf2);font-family:'DM Sans',sans-serif;outline:none}
+.modal textarea{resize:vertical;min-height:80px;line-height:1.5}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* FAB */
 .fab{position:fixed;bottom:20px;right:calc(50% - 215px + 12px);width:46px;height:46px;border-radius:50%;background:var(--ac);color:#fff;border:none;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(26,95,160,.4);z-index:10;transition:transform .1s}
@@ -660,12 +661,15 @@ async function renderAgenda(){
   $('agenda-add-btn').innerHTML = A.canAgenda()?'<button class="btn btn-sm btn-primary" onclick="openAddEvt()">+ Evento</button>':'';
   try {
     const events = await FS.getAll('events');
-    $('evt-list').innerHTML = events.map((e,idx)=>`
+    $('evt-list').innerHTML = events.map((e)=>`
       <div class="evt-item">
         <div class="evt-date"><span class="evt-day">${e.day}</span><span>${e.month}</span></div>
-        <div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--txt)">${e.name}</div><div style="font-size:11px;color:var(--txt3)">${e.time_location||''}</div></div>
-        ${e.inscricao?`<button class="btn-insc" onclick='openInscricao(${JSON.stringify(e)})'>Inscrever</button>`:''}
-      </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum evento cadastrado.</div>';
+        <div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--txt)">${e.name}</div><div style="font-size:12px;color:var(--txt3)">${e.time_location||''}</div></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          ${e.inscricao?`<button class="btn-insc" onclick='openInscricao(${JSON.stringify(e)})'>Inscrever</button>`:''}
+          ${A.canAgenda()?`<button class="btn-remove" onclick="removeItem('events','${e.id}','evento')">🗑</button>`:''}
+        </div>
+      </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum evento cadastrado.</div>';
   } catch(e){ $('evt-list').innerHTML='<div style="font-size:12px;color:var(--txt3);padding:8px">Conecte o Firebase para ver os eventos.</div>'; }
 }
 
@@ -778,23 +782,27 @@ async function renderEducacao(){
       return `<div class="edu-turma">
         <div class="edu-turma-hd" onclick="toggleTurma('${t.id}')">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:20px">${t.ico||'📚'}</span>
-            <div><div style="font-size:13px;font-weight:600;color:var(--txt)">${t.name}</div><div style="font-size:11px;color:var(--txt3)">${t.faixa||'Todos'} · ${docs.length} material${docs.length!==1?'is':''}</div></div>
+            <span style="font-size:22px">${t.ico||'📚'}</span>
+            <div><div style="font-size:15px;font-weight:600;color:var(--txt)">${t.name}</div><div style="font-size:13px;color:var(--txt3)">${t.faixa||'Todos'} · ${docs.length} material${docs.length!==1?'is':''}</div></div>
           </div>
-          <span style="font-size:13px;color:var(--txt3)" id="edu-arr-${t.id}">▸</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${A.canEdu()?`<button class="btn-remove" onclick="event.stopPropagation();removeItem('turmas','${t.id}','turma')">🗑</button>`:''}
+            <span style="font-size:15px;color:var(--txt3)" id="edu-arr-${t.id}">▸</span>
+          </div>
         </div>
         <div class="edu-turma-body" id="edu-body-${t.id}">
           ${docs.length?docs.map(d=>`
             <div class="doc-item">
               <div class="doc-ico ${d.tipo||'pdf'}">${d.tipo==='pdf'?'📄':d.tipo==='word'?'📝':d.tipo==='xls'?'📊':'🔗'}</div>
-              <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div><div style="font-size:10px;color:var(--txt3)">${d.size||''}</div></div>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div><div style="font-size:11px;color:var(--txt3)">${d.size||''}</div></div>
               <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
+              ${A.canEdu()?`<button class="btn-remove" style="margin-left:4px" onclick="removeItem('materiais','${d.id}','material')">🗑</button>`:''}
             </div>`).join('')
-          :'<div style="font-size:12px;color:var(--txt3);padding:10px 0;text-align:center">Nenhum material ainda.</div>'}
-          ${A.canEdu()?`<button class="btn btn-outline" style="margin-top:8px;font-size:12px" onclick="openAddDoc('${t.id}')">+ Adicionar material</button>`:''}
+          :'<div style="font-size:13px;color:var(--txt3);padding:10px 0;text-align:center">Nenhum material ainda.</div>'}
+          ${A.canEdu()?`<button class="btn btn-outline" style="margin-top:8px;font-size:13px" onclick="openAddDoc('${t.id}')">+ Adicionar material</button>`:''}
         </div>
       </div>`;
-    }).join('') || '<div style="font-size:12px;color:var(--txt3);padding:20px;text-align:center">Nenhuma turma cadastrada ainda.</div>';
+    }).join('') || '<div style="font-size:14px;color:var(--txt3);padding:20px;text-align:center">Nenhuma turma cadastrada ainda.</div>';
   } catch(e){ $('edu-turmas').innerHTML='<div style="font-size:12px;color:var(--txt3);padding:8px">Conecte o Firebase.</div>'; }
 }
 
@@ -894,18 +902,21 @@ async function renderFinancas(){
         ${balancetes.map(b=>`
           <div style="background:var(--surf2);border-radius:9px;padding:10px;margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:12px;font-weight:600;color:var(--txt)">${b.month||''}</div>
-              <div style="font-size:11px;color:${(b.entradas||0)-(b.saidas||0)>=0?'var(--green)':'var(--red)'};font-weight:600">${(b.entradas||0)-(b.saidas||0)>=0?'+':''}${fmt((b.entradas||0)-(b.saidas||0))}</div>
+              <div style="font-size:14px;font-weight:600;color:var(--txt)">${b.month||''}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-size:13px;color:${(b.entradas||0)-(b.saidas||0)>=0?'var(--green)':'var(--red)'};font-weight:600">${(b.entradas||0)-(b.saidas||0)>=0?'+':''}${fmt((b.entradas||0)-(b.saidas||0))}</div>
+                ${A.canFin()?`<button class="btn-remove" onclick="removeItem('balancetes','${b.id}','balancete')">🗑</button>`:''}
+              </div>
             </div>
-            <div style="display:flex;gap:10px;margin-top:5px;font-size:11px">
+            <div style="display:flex;gap:10px;margin-top:5px;font-size:13px">
               <span style="color:var(--txt3)">Entradas: <b style="color:var(--green)">${fmt(b.entradas||0)}</b></span>
               <span style="color:var(--txt3)">Saídas: <b style="color:var(--red)">${fmt(b.saidas||0)}</b></span>
             </div>
             <div class="prog-wrap" style="margin-top:6px"><div class="prog-bar" style="width:${Math.round((b.entradas||0)/((b.entradas||0)+(b.saidas||1))*100)}%;background:var(--green)"></div></div>
-            ${b.obs?`<div style="margin-top:5px;font-size:11px;color:var(--txt3);font-style:italic">${b.obs}</div>`:''}
+            ${b.obs?`<div style="margin-top:5px;font-size:13px;color:var(--txt3);font-style:italic">${b.obs}</div>`:''}
             ${renderDocs(b.docs,'xls')}
-            ${A.canFin()?`<button class="btn btn-outline" style="margin-top:8px;font-size:11px" onclick="openAddDocBal('${b.id}')">📎 Anexar documento</button>`:''}
-          </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum balancete ainda.</div>'}
+            ${A.canFin()?`<button class="btn btn-outline" style="margin-top:8px;font-size:13px" onclick="openAddDocBal('${b.id}')">📎 Anexar documento</button>`:''}
+          </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum balancete ainda.</div>'}
       </div>`;
 
     } else if(A.finSubtab==='entradas'){
@@ -922,13 +933,14 @@ async function renderFinancas(){
           <div class="doc-item" style="margin-bottom:8px;background:var(--greens);border-radius:9px;padding:9px 11px">
             <div class="doc-ico xls">📊</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
-              <div style="font-size:10px;color:var(--txt3)">${d.date_ref||''}</div>
+              <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
+              <div style="font-size:11px;color:var(--txt3)">${d.date_ref||''}</div>
             </div>
             <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
+            ${A.canFin()?`<button class="btn-remove" style="margin-left:4px" onclick="removeItem('docs_financeiros','${d.id}','documento')">🗑</button>`:''}
           </div>`).join('')}
         <div style="border-top:.5px solid var(--bdr);padding-top:8px;margin-top:4px">
-          ${ins.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${A.canFin()?f.who:'Membro'} · ${f.date_ref||''}</div></div><div class="fin-val in">+ ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
+          ${ins.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${A.canFin()?f.who:'Membro'} · ${f.date_ref||''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="fin-val in">+ ${fmt(f.val||0)}</div>${A.canFin()?`<button class="btn-remove" onclick="removeItem('finance','${f.id}','entrada')">🗑</button>`:''}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
         </div>
         <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px">
           <div style="font-size:13px;font-weight:600;color:var(--txt)">Total de entradas</div>
@@ -948,13 +960,14 @@ async function renderFinancas(){
           <div class="doc-item" style="margin-bottom:8px;background:var(--reds);border-radius:9px;padding:9px 11px">
             <div class="doc-ico xls">📊</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
-              <div style="font-size:10px;color:var(--txt3)">${d.date_ref||''}</div>
+              <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
+              <div style="font-size:11px;color:var(--txt3)">${d.date_ref||''}</div>
             </div>
             <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
+            ${A.canFin()?`<button class="btn-remove" style="margin-left:4px" onclick="removeItem('docs_financeiros','${d.id}','documento')">🗑</button>`:''}
           </div>`).join('')}
         <div style="border-top:.5px solid var(--bdr);padding-top:8px;margin-top:4px">
-          ${outs.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${f.date_ref||''}</div></div><div class="fin-val out">− ${fmt(f.val||0)}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
+          ${outs.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${f.date_ref||''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="fin-val out">− ${fmt(f.val||0)}</div>${A.canFin()?`<button class="btn-remove" onclick="removeItem('finance','${f.id}','saída')">🗑</button>`:''}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
         </div>
         <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px">
           <div style="font-size:13px;font-weight:600;color:var(--txt)">Total de saídas</div>
@@ -989,15 +1002,16 @@ async function renderAtas(){
       </div>
       ${atas.map(a=>`
         <div class="ata-item">
-          <div class="ata-title">${a.title||''}</div>
+          <div class="ata-title" style="font-size:14px">${a.title||''}</div>
           <div class="ata-meta">📅 ${a.date_ref||''}</div>
           <div class="ata-prev">${a.preview||''}</div>
-          <div style="display:flex;gap:6px;margin-top:5px">
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
             <button class="ata-btn" onclick='openAtaDetail(${JSON.stringify(a).replace(/'/g,"&#39;")})'>Ver completo</button>
             ${A.canAta()?`<button class="ata-btn" onclick="openAddDocAta('${a.id}')">📎 Anexar</button>`:''}
+            ${A.canAta()?`<button class="ata-btn" style="background:var(--reds);color:var(--red)" onclick="removeItem('atas','${a.id}','ata')">🗑 Remover</button>`:''}
           </div>
-          ${a.doc_name?`<div class="doc-item" style="margin-top:5px"><div class="doc-ico pdf">📄</div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.doc_name}</div></div><button class="doc-btn" onclick="window.open('${a.doc_url}','_blank')">↓</button></div>`:''}
-        </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhuma ata cadastrada ainda.</div>'}
+          ${a.doc_name?`<div class="doc-item" style="margin-top:5px"><div class="doc-ico pdf">📄</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.doc_name}</div></div><button class="doc-btn" onclick="window.open('${a.doc_url}','_blank')">↓</button></div>`:''}
+        </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhuma ata cadastrada ainda.</div>'}
     </div>`;
   } catch(e){ $('atas-content').innerHTML='<div style="font-size:12px;color:var(--txt3);padding:8px">Conecte o Firebase.</div>'; }
 }
@@ -1231,6 +1245,31 @@ window.saveDocAta = async (ataId) => {
   const name=$('da-n').value.trim(); if(!name)return;
   await FS.update('atas',ataId,{doc_name:name,doc_url:$('da-u').value||'#'});
   closeModal(); renderAtas();
+};
+
+// ── REMOVER ITEM ───────────────────────────────────────────
+window.removeItem = async (collection, id, label) => {
+  const confirmed = confirm(`Remover este ${label}?\n\nEsta ação não pode ser desfeita.`);
+  if(!confirmed) return;
+  try {
+    await FS.del(collection, id);
+    // atualiza a tela certa
+    const refreshMap = {
+      finance: renderFinancas,
+      docs_financeiros: renderFinancas,
+      balancetes: renderFinancas,
+      events: renderAgenda,
+      atas: renderAtas,
+      turmas: renderEducacao,
+      materiais: renderEducacao,
+      avisos: renderHome,
+      pregacoes: renderPregacoes,
+    };
+    refreshMap[collection]?.();
+  } catch(e) {
+    alert('Erro ao remover. Tente novamente.');
+    console.error(e);
+  }
 };
 
 // ── AVISOS ─────────────────────────────────────────────────
