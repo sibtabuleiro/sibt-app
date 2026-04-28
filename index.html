@@ -480,7 +480,6 @@ Valores: Igreja bíblica, cristocêntrica, acolhedora e discipuladora.</div>
       <button class="org-tab" onclick="switchMemTab('organograma',this)">Organograma</button>
     </div>
     <div id="memtab-lista">
-      <div class="card" style="margin-bottom:9px"><div class="ctitle">Liderança <span class="tag tag-pub">público</span></div><div id="mem-pub-list"><div class="loading"><div class="spinner"></div></div></div></div>
       <div id="mem-member-area"></div>
     </div>
     <div id="memtab-organograma" style="display:none">
@@ -684,33 +683,28 @@ async function renderAgenda(){
 
 // ── MEMBROS ────────────────────────────────────────────────
 async function renderMembros(){
+  const ma = $('mem-member-area');
+  if(!A.isMem()){
+    ma.innerHTML=`<div class="card locked"><div class="lock-ico">👥</div><div class="lock-title">Lista de membros</div><div class="lock-sub">Acesso para membros cadastrados. Use o organograma para ver a estrutura da liderança.</div><div class="lock-acts"><button class="btn btn-primary" onclick="openLoginModal()">Entrar com Gmail</button></div></div>`;
+    return;
+  }
   try {
     const members = await FS.getAll('members');
-    const lideranca = members.filter(m=>m.cargo==='Pastoral'||m.cargo==='Diretoria');
-    $('mem-pub-list').innerHTML = lideranca.map((m,i)=>`
-      <div class="m-item">
-        <div class="m-av" style="background:${avc(i)}22;color:${avc(i)}">${ini(m.name)}</div>
-        <div><div class="m-name">${m.name}</div><div class="m-sub">${m.role||''}</div></div>
-      </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0">Nenhum membro cadastrado ainda.</div>';
-
-    const ma = $('mem-member-area');
-    if(!A.isMem()){
-      ma.innerHTML=`<div class="card locked"><div class="lock-ico">👥</div><div class="lock-title">Lista completa</div><div class="lock-sub">Acesso para membros cadastrados.</div><div class="lock-acts"><button class="btn btn-primary" onclick="openLoginModal()">Entrar com Gmail</button></div></div>`;
-      return;
-    }
+    // ordenar alfabeticamente
+    members.sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR'));
     ma.innerHTML=`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div class="ctitle" style="margin:0">Todos os membros <span class="tag tag-mem">membros</span></div>
+        <div class="ctitle" style="margin:0">Membros <span class="tag tag-mem">membros</span></div>
         ${A.isAdm()?'<button class="btn btn-sm btn-primary" onclick="openAddMembro()">+</button>':''}
       </div>
-      ${A.isAdm()?'<div style="font-size:11px;color:var(--txt3);margin-bottom:8px">Toque em um membro para gerenciar o acesso.</div>':''}
+      ${A.isAdm()?'<div style="font-size:12px;color:var(--txt3);margin-bottom:8px">Toque em um membro para gerenciar o acesso.</div>':''}
       ${members.map((m,i)=>`
         <div class="m-item" style="${A.isAdm()?'cursor:pointer':''}" onclick="${A.isAdm()?`openPermModal('${m.id}','${m.name}','${m.perm||'member'}')`:'' }">
           <div class="m-av" style="background:${avc(i)}22;color:${avc(i)}">${ini(m.name)}</div>
           <div style="flex:1"><div class="m-name">${m.name}</div><div class="m-sub">${m.role||''}</div></div>
           <span class="bdg ${BDG[m.perm]||'bdg-active'}">${BDG_LABEL[m.perm]||'Membro'}</span>
           ${A.isAdm()?'<span style="font-size:12px;color:var(--txt3);margin-left:4px">›</span>':''}
-        </div>`).join('')}
+        </div>`).join('') || '<div style="font-size:13px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum membro cadastrado ainda.</div>'}
     </div>`;
   } catch(e){ console.error(e); }
 }
@@ -1143,26 +1137,84 @@ async function renderAtas(){
   }
   try {
     const atas = await FS.getAll('atas');
-    $('atas-content').innerHTML=`<div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div class="ctitle" style="margin:0">Atas <span class="tag tag-mem">membros</span></div>
-        ${A.canAta()?'<button class="btn btn-sm btn-primary" onclick="openAddAta()">+ Nova</button>':''}
+    const ultimas6 = atas.slice(0,6);
+    const temMais = atas.length > 6;
+    $('atas-content').innerHTML=`
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="ctitle" style="margin:0">Atas <span class="tag tag-mem">membros</span></div>
+          ${A.canAta()?'<button class="btn btn-sm btn-primary" onclick="openAddAta()">+ Nova</button>':''}
+        </div>
+        ${ultimas6.map(a=>`
+          <div class="ata-item">
+            <div class="ata-title" style="font-size:14px">${a.title||''}</div>
+            <div class="ata-meta">📅 ${a.date_ref||''}</div>
+            <div class="ata-prev">${a.preview||''}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              <button class="ata-btn" onclick='openAtaDetail(${JSON.stringify(a).replace(/'/g,"&#39;")})'>Ver completo</button>
+              ${A.canAta()?`<button class="ata-btn" onclick="openAddDocAta('${a.id}')">📎 Anexar</button>`:''}
+              ${A.canAta()?`<button class="ata-btn" style="background:var(--reds);color:var(--red)" onclick="removeItem('atas','${a.id}','ata')">🗑 Remover</button>`:''}
+            </div>
+            ${a.doc_name?`<div class="doc-item" style="margin-top:5px"><div class="doc-ico pdf">📄</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.doc_name}</div></div><button class="doc-btn" onclick="window.open('${a.doc_url}','_blank')">↓</button></div>`:''}
+          </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhuma ata cadastrada ainda.</div>'}
+        ${temMais?`<div style="text-align:center;padding:8px 0 2px;font-size:12px;color:var(--txt3)">Exibindo as 6 atas mais recentes · Total: ${atas.length}</div>`:''}
       </div>
-      ${atas.map(a=>`
-        <div class="ata-item">
-          <div class="ata-title" style="font-size:14px">${a.title||''}</div>
-          <div class="ata-meta">📅 ${a.date_ref||''}</div>
-          <div class="ata-prev">${a.preview||''}</div>
-          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-            <button class="ata-btn" onclick='openAtaDetail(${JSON.stringify(a).replace(/'/g,"&#39;")})'>Ver completo</button>
-            ${A.canAta()?`<button class="ata-btn" onclick="openAddDocAta('${a.id}')">📎 Anexar</button>`:''}
-            ${A.canAta()?`<button class="ata-btn" style="background:var(--reds);color:var(--red)" onclick="removeItem('atas','${a.id}','ata')">🗑 Remover</button>`:''}
-          </div>
-          ${a.doc_name?`<div class="doc-item" style="margin-top:5px"><div class="doc-ico pdf">📄</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.doc_name}</div></div><button class="doc-btn" onclick="window.open('${a.doc_url}','_blank')">↓</button></div>`:''}
-        </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhuma ata cadastrada ainda.</div>'}
-    </div>`;
-  } catch(e){ $('atas-content').innerHTML='<div style="font-size:12px;color:var(--txt3);padding:8px">Conecte o Firebase.</div>'; }
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="ctitle" style="margin:0">Membresia atualizada <span class="tag tag-mem">membros</span></div>
+          ${A.canAta()?'<button class="btn btn-sm btn-primary" onclick="openAddMembresia()">+ Novo</button>':''}
+        </div>
+        <div style="font-size:12px;color:var(--txt3);margin-bottom:10px;line-height:1.5">Lista de membros e documentos de membresia atualizados.</div>
+        <div id="membresia-list"><div class="loading"><div class="spinner"></div></div></div>
+      </div>`;
+    loadMembresia();
+  } catch(e){ $('atas-content').innerHTML='<div style="font-size:13px;color:var(--txt3);padding:8px">Conecte o Firebase.</div>'; }
 }
+
+async function loadMembresia(){
+  try {
+    const docs = await FS.getAll('membresia');
+    const el = document.getElementById('membresia-list');
+    if(!el) return;
+    el.innerHTML = docs.length ? docs.map(d=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--bdr)">
+        <div class="doc-ico pdf" style="flex-shrink:0">📄</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name||''}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-top:2px">${d.date_ref||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          ${d.url?`<a href="${d.url}" target="_blank" style="background:var(--acs);color:var(--ac);border-radius:6px;padding:5px 11px;font-size:12px;font-weight:600;text-decoration:none">↓ Baixar</a>`:''}
+          ${A.canAta()?`<button class="btn-remove" onclick="removeItem('membresia','${d.id}','documento')">🗑</button>`:''}
+        </div>
+      </div>`).join('')
+    : '<div style="font-size:13px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum documento cadastrado ainda.</div>';
+  } catch(e){ console.error(e); }
+}
+
+window.openAddMembresia = () => {
+  $('modal-body').innerHTML=`
+    <h3>Membresia atualizada</h3>
+    <div style="font-size:13px;color:var(--txt3);margin-bottom:10px;line-height:1.5">Adicione a lista de membros atualizada ou documento de membresia.</div>
+    <label>Nome do documento</label>
+    <input id="mb-n" placeholder="Ex: Lista de Membros — Junho 2026">
+    <label>Data de referência</label>
+    <input id="mb-d" placeholder="Ex: Junho 2026">
+    <label>Link do documento (Google Drive, PDF...)</label>
+    <input id="mb-u" placeholder="https://drive.google.com/...">
+    <div class="upload-area"><div style="font-size:13px;color:var(--txt3);line-height:1.5">📎 Cole o link público do documento<br><span style="font-size:11px">Google Drive: Compartilhar → "Qualquer pessoa com o link"</span></div></div>
+    <button class="btn btn-primary" style="margin-top:13px" onclick="saveMembresia()">Salvar</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+
+window.saveMembresia = async () => {
+  const name = $('mb-n').value.trim();
+  if(!name){ alert('Informe o nome do documento.'); return; }
+  await FS.add('membresia',{name, date_ref: $('mb-d').value.trim(), url: $('mb-u').value.trim()||null});
+  closeModal(); renderAtas();
+};
 
 window.openAtaDetail = (a) => {
   $('modal-body').innerHTML=`<h3>${a.title||''}</h3><div style="font-size:11px;color:var(--txt3);margin-bottom:10px">📅 ${a.date_ref||''}</div><div style="font-size:13px;color:var(--txt2);line-height:1.65">${a.full_text||a.preview||''}</div><button class="btn-cancel" onclick="closeModal()">Fechar</button>`;
