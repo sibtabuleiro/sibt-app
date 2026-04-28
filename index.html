@@ -15,7 +15,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc, orderBy, query, where, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   // ══════════════════════════════════════════════════════
@@ -58,27 +58,46 @@
   };
 
   // ── Auth listener ────────────────────────────────────
+  // Primeiro trata o retorno do redirect (se vier de um login)
+  getRedirectResult(auth).then(async (result) => {
+    if (result?.user) {
+      // login via redirect completado — o onAuthStateChanged abaixo vai cuidar do resto
+      console.log('Login via redirect:', result.user.email);
+    }
+  }).catch((e) => {
+    console.error('Redirect result error:', e);
+  });
+
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       window.APP.user = user;
-      // busca ou cria perfil no Firestore
-      const ref = doc(db, 'members', user.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        window.APP.profile = snap.data();
-      } else {
-        const newProfile = {
-          name:  user.displayName || user.email,
+      try {
+        const ref = doc(db, 'members', user.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          window.APP.profile = snap.data();
+        } else {
+          const newProfile = {
+            name:  user.displayName || user.email,
+            email: user.email,
+            photo: user.photoURL || '',
+            role:  'Membro',
+            cargo: 'Membro',
+            perm:  'member',
+            status:'active',
+            createdAt: serverTimestamp()
+          };
+          await setDoc(ref, newProfile);
+          window.APP.profile = newProfile;
+        }
+      } catch(e) {
+        console.error('Erro ao carregar perfil:', e);
+        // mesmo sem perfil no Firestore, mantém o usuário logado
+        window.APP.profile = {
+          name: user.displayName || user.email,
           email: user.email,
-          photo: user.photoURL || '',
-          role:  'Membro',
-          cargo: 'Membro',
-          perm:  'member',
-          status:'active',
-          createdAt: serverTimestamp()
+          perm: 'member'
         };
-        await setDoc(ref, newProfile);
-        window.APP.profile = newProfile;
       }
     } else {
       window.APP.user    = null;
@@ -90,9 +109,11 @@
   // ── Login / Logout ───────────────────────────────────
   window.doLogin = async () => {
     try {
-      await signInWithPopup(auth, gProvider);
+      // usa redirect — funciona em todos os navegadores e celulares
+      await signInWithRedirect(auth, gProvider);
+      // a página vai redirecionar para o Google e voltar automaticamente
     } catch(e) {
-      console.error(e);
+      console.error('Login error:', e);
       alert('Erro ao entrar. Tente novamente.');
     }
   };
@@ -813,13 +834,13 @@ async function loadYouTube(){
 
 async function loadSpotify(){
   try {
-    // Usa o RSS público do podcast via proxy CORS gratuito
+    // RSS público do Spotify — não precisa de autenticação
     const rssUrl = `https://feeds.buzzsprout.com/2134295.rss`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+    const proxy  = `https://corsproxy.io/?${encodeURIComponent(rssUrl)}`;
 
-    const res = await fetch(proxyUrl);
-    const data = await res.json();
-    const xml = new DOMParser().parseFromString(data.contents, 'text/xml');
+    const res  = await fetch(proxy);
+    const text = await res.text();
+    const xml  = new DOMParser().parseFromString(text, 'text/xml');
     const items = Array.from(xml.querySelectorAll('item')).slice(0,5);
 
     if(!items.length) throw new Error('sem episódios');
@@ -827,13 +848,14 @@ async function loadSpotify(){
     $('sp-list').innerHTML = items.map(item=>{
       const title    = item.querySelector('title')?.textContent||'';
       const pubDate  = item.querySelector('pubDate')?.textContent||'';
-      const link     = item.querySelector('link')?.textContent||`https://open.spotify.com/show/${SP_SHOW_ID}`;
+      const link     = item.querySelector('link')?.textContent
+                    || item.getElementsByTagName('enclosure')[0]?.getAttribute('url')
+                    || `https://open.spotify.com/show/${SP_SHOW_ID}`;
       const duration = item.querySelector('duration')?.textContent||'';
-      const imgUrl   = item.querySelector('image')?.getAttribute('href')||
-                       xml.querySelector('channel image url')?.textContent||'';
+      const imgUrl   = item.querySelector('image')?.getAttribute('href')
+                    || xml.querySelector('channel > image > url')?.textContent||'';
       const date = pubDate ? new Date(pubDate).toLocaleDateString('pt-BR') : '';
 
-      // formata duração (pode vir em segundos ou HH:MM:SS)
       let durStr = '';
       if(duration){
         if(duration.includes(':')){
@@ -841,13 +863,13 @@ async function loadSpotify(){
           durStr = parts.length===3 ? `${parts[0]}h${parts[1]}min` : `${parts[0]}min`;
         } else {
           const mins = Math.round(parseInt(duration)/60);
-          durStr = `${mins} min`;
+          if(!isNaN(mins)) durStr = `${mins} min`;
         }
       }
 
-      return `<div class="preg-item" onclick="window.open('${link}','_blank')">
+      return `<div class="preg-item" onclick="window.open('https://open.spotify.com/show/${SP_SHOW_ID}','_blank')">
         <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#e8f8ee;display:flex;align-items:center;justify-content:center">
-          ${imgUrl?`<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='♪'">`:'<span style="font-size:22px">♪</span>'}
+          ${imgUrl?`<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<span style=font-size:22px>♪</span>'">`:'<span style="font-size:22px">♪</span>'}
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:500;color:var(--txt);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${title}</div>
@@ -857,51 +879,11 @@ async function loadSpotify(){
       </div>`;
     }).join('');
   } catch(e){
-    // fallback: tenta direto pela API do Spotify com token
-    console.warn('RSS falhou, tentando API Spotify...', e);
-    try {
-      const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic ' + btoa(`${SP_CLIENT_ID}:${SP_CLIENT_SECRET}`)
-        },
-        body: 'grant_type=client_credentials'
-      });
-      const tokenData = await tokenRes.json();
-      const token = tokenData.access_token;
-      if(!token) throw new Error('sem token');
-
-      const epRes = await fetch(
-        `https://api.spotify.com/v1/shows/${SP_SHOW_ID}/episodes?market=BR&limit=5`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      const epData = await epRes.json();
-      const episodes = epData.items||[];
-      if(!episodes.length) throw new Error('sem episódios');
-
-      $('sp-list').innerHTML = episodes.map(ep=>{
-        const mins  = Math.round((ep.duration_ms||0)/60000);
-        const date  = new Date(ep.release_date).toLocaleDateString('pt-BR');
-        const thumb = ep.images?.[0]?.url||'';
-        const url   = ep.external_urls?.spotify||`https://open.spotify.com/show/${SP_SHOW_ID}`;
-        return `<div class="preg-item" onclick="window.open('${url}','_blank')">
-          <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#e8f8ee;display:flex;align-items:center;justify-content:center">
-            ${thumb?`<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:22px">♪</span>'}
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:500;color:var(--txt);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${ep.name}</div>
-            <div style="font-size:11px;color:var(--txt3);margin-top:3px">${date} · ${mins} min</div>
-            <span style="display:inline-block;font-size:10px;font-weight:600;margin-top:3px;padding:2px 8px;border-radius:20px;background:#e8f8ee;color:#1db954">♪ Spotify</span>
-          </div>
-        </div>`;
-      }).join('');
-    } catch(e2){
-      $('sp-list').innerHTML=`<div style="text-align:center;padding:12px 0">
-        <div style="font-size:13px;color:var(--txt3);margin-bottom:10px">Toque para ouvir o podcast da SIBT no Spotify.</div>
-        <a href="https://open.spotify.com/show/${SP_SHOW_ID}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1db954;color:#fff;padding:9px 18px;border-radius:9px;text-decoration:none;font-size:13px;font-weight:600">♪ Abrir no Spotify</a>
-      </div>`;
-    }
+    console.error('Spotify RSS:', e);
+    $('sp-list').innerHTML=`<div style="text-align:center;padding:12px 0">
+      <div style="font-size:13px;color:var(--txt3);margin-bottom:10px">Toque para ouvir o podcast da SIBT.</div>
+      <a href="https://open.spotify.com/show/${SP_SHOW_ID}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1db954;color:#fff;padding:9px 18px;border-radius:9px;text-decoration:none;font-size:13px;font-weight:600">♪ Abrir no Spotify</a>
+    </div>`;
   }
 }
 
