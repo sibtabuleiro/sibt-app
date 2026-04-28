@@ -125,9 +125,9 @@
 
   // ── Firestore helpers ────────────────────────────────
   window.FS = {
-    // lê coleção inteira
+    // lê coleção inteira — ordem crescente (mais antigo primeiro)
     getAll: async (col) => {
-      const q = query(collection(db, col), orderBy('createdAt','desc'));
+      const q = query(collection(db, col), orderBy('createdAt','asc'));
       const snap = await getDocs(q).catch(() => getDocs(collection(db, col)));
       return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     },
@@ -669,9 +669,12 @@ async function renderHome(){
     if(avisosEl){
       avisosEl.innerHTML = avisos.length
         ? avisos.map(a=>`
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:.5px solid var(--bdr)">
-              <div style="font-size:12px;color:var(--txt2);line-height:1.6;flex:1">${a.emoji||'📢'} ${a.texto||''}</div>
-              ${A.isAdm()?`<button onclick="deleteAviso('${a.id}')" style="background:none;border:none;color:var(--txt3);cursor:pointer;font-size:13px;flex-shrink:0;margin-left:8px">✕</button>`:''}
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:.5px solid var(--bdr)">
+              <div style="font-size:13px;color:var(--txt2);line-height:1.6;flex:1">${a.emoji||'📢'} ${a.texto||''}</div>
+              ${A.isAdm()?`<div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+                <button onclick="editAviso('${a.id}','${(a.emoji||'📢')}','${encodeURIComponent(a.texto||'')}')" style="background:var(--acs);border:none;color:var(--ac);cursor:pointer;font-size:12px;padding:3px 8px;border-radius:6px;font-family:DM Sans,sans-serif">✏️</button>
+                <button onclick="deleteAviso('${a.id}')" style="background:var(--reds);border:none;color:var(--red);cursor:pointer;font-size:12px;padding:3px 8px;border-radius:6px;font-family:DM Sans,sans-serif">✕</button>
+              </div>`:''}
             </div>`).join('')
         : '<div style="font-size:12px;color:var(--txt3);padding:4px 0">Nenhum aviso no momento.</div>';
     }
@@ -702,6 +705,7 @@ async function renderAgenda(){
         <div style="flex:1"><div style="font-size:14px;font-weight:500;color:var(--txt)">${e.name}</div><div style="font-size:12px;color:var(--txt3)">${e.time_location||''}</div></div>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
           ${e.inscricao?`<button class="btn-insc" onclick='openInscricao(${JSON.stringify(e)})'>Inscrever</button>`:''}
+          ${A.canAgenda()?`<button class="btn-remove" style="background:var(--acs);color:var(--ac)" onclick='editEvt(${JSON.stringify(e)})'>✏️</button>`:''}
           ${A.canAgenda()?`<button class="btn-remove" onclick="removeItem('events','${e.id}','evento')">🗑</button>`:''}
         </div>
       </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum evento cadastrado.</div>';
@@ -1189,7 +1193,86 @@ async function loadMembresia(){
   } catch(e){ console.error(e); }
 }
 
-window.openAddMembresia = () => {
+window.editAviso = (id, emoji, textoEncoded) => {
+  const texto = decodeURIComponent(textoEncoded);
+  $('modal-body').innerHTML=`
+    <h3>Editar aviso</h3>
+    <label>Emoji</label>
+    <select id="av-emoji">
+      <option value="📢" ${emoji==='📢'?'selected':''}>📢 Anúncio</option>
+      <option value="🙏" ${emoji==='🙏'?'selected':''}>🙏 Oração</option>
+      <option value="📖" ${emoji==='📖'?'selected':''}>📖 Estudo</option>
+      <option value="🎉" ${emoji==='🎉'?'selected':''}>🎉 Celebração</option>
+      <option value="⚠️" ${emoji==='⚠️'?'selected':''}>⚠️ Atenção</option>
+      <option value="🎵" ${emoji==='🎵'?'selected':''}>🎵 Louvor</option>
+      <option value="❤️" ${emoji==='❤️'?'selected':''}>❤️ Outros</option>
+    </select>
+    <label>Texto do aviso</label>
+    <textarea id="av-texto" style="min-height:80px">${texto}</textarea>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="saveEditAviso('${id}')">Salvar alterações</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+
+window.saveEditAviso = async (id) => {
+  const texto = $('av-texto').value.trim();
+  if(!texto) return;
+  await FS.update('avisos', id, {emoji: $('av-emoji').value, texto});
+  closeModal();
+  renderHome();
+};
+
+window.editEvt = (evt) => {
+  const e = typeof evt==='string'?JSON.parse(evt):evt;
+  $('modal-body').innerHTML=`
+    <h3>Editar evento</h3>
+    <label>Nome do evento</label>
+    <input id="e-n" value="${e.name||''}">
+    <div class="modal-row">
+      <div><label>Dia</label><input id="e-d" type="number" min="1" max="31" value="${e.day||''}"></div>
+      <div><label>Mês</label>
+        <select id="e-m">
+          ${['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'].map(m=>`<option ${e.month===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <label>Horário e local</label>
+    <input id="e-t" value="${e.time_location||''}">
+    <label>Requer inscrição?</label>
+    <select id="e-i" onchange="toggleEO()">
+      <option value="false" ${!e.inscricao?'selected':''}>Não</option>
+      <option value="true" ${e.inscricao?'selected':''}>Sim</option>
+    </select>
+    <div id="e-opts" style="display:${e.inscricao?'block':'none'}">
+      <label>Valor</label>
+      <select id="e-g">
+        <option value="true" ${e.gratuito?'selected':''}>Gratuito</option>
+        <option value="false" ${!e.gratuito?'selected':''}>Pago</option>
+      </select>
+      <label>Preço (R$)</label><input id="e-p" type="number" value="${e.preco||0}">
+      <label>Vagas</label><input id="e-v" type="number" value="${e.vagas||100}">
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="saveEditEvt('${e.id}')">Salvar alterações</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+
+window.saveEditEvt = async (id) => {
+  const name = $('e-n').value.trim();
+  const day  = $('e-d').value;
+  if(!name||!day) return;
+  const insc = $('e-i').value==='true';
+  await FS.update('events', id, {
+    name, day, month: $('e-m').value,
+    time_location: $('e-t').value,
+    inscricao: insc,
+    gratuito: insc?$('e-g').value==='true':true,
+    preco: insc?parseFloat($('e-p').value)||0:0,
+    vagas: insc?parseInt($('e-v').value)||100:100
+  });
+  closeModal();
+  renderAgenda();
+};
   $('modal-body').innerHTML=`
     <h3>Membresia atualizada</h3>
     <div style="font-size:13px;color:var(--txt3);margin-bottom:10px;line-height:1.5">Adicione a lista de membros atualizada ou documento de membresia.</div>
