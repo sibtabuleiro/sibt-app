@@ -48,9 +48,9 @@
     db, auth,
 
     // helpers de permissão
-    perm:       () => window.APP.profile?.perm || 'public',
+    perm:       () => window.APP.profile?.perm || 'congregado',
     isAdm:      () => window.APP.perm() === 'admin',
-    isMem:      () => window.APP.perm() !== 'public',
+    isMem:      () => ['admin','tesoureiro','secretario','professor','member'].includes(window.APP.perm()),
     canFin:     () => ['admin','tesoureiro'].includes(window.APP.perm()),
     canAta:     () => ['admin','secretario'].includes(window.APP.perm()),
     canAgenda:  () => ['admin','secretario'].includes(window.APP.perm()),
@@ -81,9 +81,9 @@
             name:  user.displayName || user.email,
             email: user.email,
             photo: user.photoURL || '',
-            role:  'Membro',
-            cargo: 'Membro',
-            perm:  'member',
+            role:  'Congregado',
+            cargo: 'Congregado',
+            perm:  'congregado',
             status:'active',
             createdAt: serverTimestamp()
           };
@@ -92,11 +92,10 @@
         }
       } catch(e) {
         console.error('Erro ao carregar perfil:', e);
-        // mesmo sem perfil no Firestore, mantém o usuário logado
         window.APP.profile = {
           name: user.displayName || user.email,
           email: user.email,
-          perm: 'member'
+          perm: 'congregado'
         };
       }
     } else {
@@ -185,6 +184,7 @@ body{font-family:'DM Sans',sans-serif;background:#dde3ee;display:flex;justify-co
 .rb-teso{background:#fde8ff;color:#6b21a8}
 .rb-sec{background:#ffe4e6;color:#9f1239}
 .rb-prof{background:#fef9c3;color:#713f12}
+.rb-cong{background:rgba(255,255,255,.15);color:#fff}
 
 /* NAV */
 .nav{background:var(--surf);display:flex;border-bottom:.5px solid var(--bdr);flex-shrink:0;overflow-x:auto;scrollbar-width:none}
@@ -231,6 +231,7 @@ body{font-family:'DM Sans',sans-serif;background:#dde3ee;display:flex;justify-co
 .bdg-sec{background:#ffe4e6;color:#9f1239}
 .bdg-prof{background:#fef9c3;color:#713f12}
 .bdg-adm{background:var(--acs);color:var(--ac)}
+.bdg-cong{background:var(--surf2);color:var(--txt3)}
 .tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:5px}
 .tag-pub{background:var(--acs);color:var(--ac)}
 .tag-mem{background:#f0e8ff;color:#5b21b6}
@@ -560,10 +561,14 @@ Valores: Igreja bíblica, cristocêntrica, acolhedora e discipuladora.</div>
 
   <!-- ADMIN -->
   <div id="screen-admin" class="screen">
-    <div class="card"><div class="ctitle">Solicitações pendentes</div><div id="adm-pend"></div></div>
     <div class="card">
-      <div class="ctitle">Membros — gerenciar cargos</div>
-      <div style="font-size:11px;color:var(--txt3);margin-bottom:8px">Toque em um membro para definir o acesso dele.</div>
+      <div class="ctitle" style="margin-bottom:10px">⏳ Aguardando definição de cargo</div>
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:10px">Estas pessoas entraram no app e precisam de um cargo definido. Toque para definir.</div>
+      <div id="adm-pend"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle" style="margin-bottom:8px">Todos os usuários</div>
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:8px">Toque em qualquer pessoa para alterar o cargo.</div>
       <div id="adm-mem"><div class="loading"><div class="spinner"></div></div></div>
     </div>
   </div>
@@ -593,10 +598,10 @@ const SP_CLIENT_ID  = 'cd82812333a14711970ebece3a7cf357';
 const SP_CLIENT_SECRET = '0d660e5aaed54f5aa90107fe83c6292e';
 const SP_SHOW_ID    = '7tBKjuyOTjmvvcgq2ak2AD';
 
-const PERM_LABELS = {admin:'🛡 Admin',tesoureiro:'💼 Tesoureiro',secretario:'📝 Secretário(a)',professor:'🎓 Professor(a)',member:'✔ Membro'};
-const PERM_DESCS  = {admin:'Acesso total ao sistema',tesoureiro:'Gerencia finanças e balancetes',secretario:'Gerencia atas, agenda e eventos',professor:'Adiciona turmas e materiais em Educação',member:'Visualiza conteúdo restrito a membros'};
-const BDG         = {admin:'bdg-adm',tesoureiro:'bdg-teso',secretario:'bdg-sec',professor:'bdg-prof',member:'bdg-active'};
-const BDG_LABEL   = {admin:'Admin',tesoureiro:'Tesoureiro',secretario:'Secretário(a)',professor:'Professor(a)',member:'Membro'};
+const PERM_LABELS = {admin:'🛡 Admin',tesoureiro:'💼 Tesoureiro',secretario:'📝 Secretário(a)',professor:'🎓 Professor(a)',member:'✔ Membro',congregado:'🙏 Congregado'};
+const PERM_DESCS  = {admin:'Acesso total ao sistema',tesoureiro:'Gerencia finanças e balancetes',secretario:'Gerencia atas, agenda e eventos',professor:'Adiciona turmas e materiais em Educação',member:'Visualiza conteúdo restrito a membros',congregado:'Acesso público — aguardando definição de cargo'};
+const BDG         = {admin:'bdg-adm',tesoureiro:'bdg-teso',secretario:'bdg-sec',professor:'bdg-prof',member:'bdg-active',congregado:'bdg-cong'};
+const BDG_LABEL   = {admin:'Admin',tesoureiro:'Tesoureiro',secretario:'Secretário(a)',professor:'Professor(a)',member:'Membro',congregado:'Congregado'};
 
 // ── Helpers ────────────────────────────────────────────────
 const fmt  = v => 'R$ ' + Number(v).toLocaleString('pt-BR');
@@ -616,8 +621,9 @@ function updateTop(){
     }
     $('top-uname').textContent = (A.user.displayName||A.user.email).split(' ')[0];
     const p = A.perm();
-    const cls = p==='admin'?'adm':p==='tesoureiro'?'teso':p==='secretario'?'sec':p==='professor'?'prof':'mem';
-    $('top-role-badge').innerHTML=`<span class="role-badge rb-${cls}">${PERM_LABELS[p]||'✔ Membro'}</span>`;
+    const clsMap = {admin:'adm',tesoureiro:'teso',secretario:'sec',professor:'prof',member:'mem',congregado:'cong'};
+    const cls = clsMap[p]||'cong';
+    $('top-role-badge').innerHTML=`<span class="role-badge rb-${cls}">${PERM_LABELS[p]||'🙏 Congregado'}</span>`;
     $('nav-admin').style.display = A.isAdm()?'flex':'none';
   } else {
     $('top-av').textContent = '?';
@@ -710,44 +716,52 @@ async function renderMembros(){
     return;
   }
   try {
-    const members = await FS.getAll('members');
-    // ordenar alfabeticamente
+    const all = await FS.getAll('members');
+    // só exibe quem tem perm de membro ou acima
+    const members = all.filter(m=>['admin','tesoureiro','secretario','professor','member'].includes(m.perm));
     members.sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR'));
     ma.innerHTML=`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div class="ctitle" style="margin:0">Membros <span class="tag tag-mem">membros</span></div>
-        ${A.isAdm()?'<button class="btn btn-sm btn-primary" onclick="openAddMembro()">+</button>':''}
       </div>
       ${A.isAdm()?'<div style="font-size:12px;color:var(--txt3);margin-bottom:8px">Toque em um membro para gerenciar o acesso.</div>':''}
-      ${members.map((m,i)=>`
-        <div class="m-item" style="${A.isAdm()?'cursor:pointer':''}" onclick="${A.isAdm()?`openPermModal('${m.id}','${m.name}','${m.perm||'member'}')`:'' }">
+      ${members.length ? members.map((m,i)=>`
+        <div class="m-item" style="${A.isAdm()?'cursor:pointer':''}" onclick="${A.isAdm()?`openPermModal('${m.id}','${m.name}','${m.perm||'congregado'}')`:'' }">
           <div class="m-av" style="background:${avc(i)}22;color:${avc(i)}">${ini(m.name)}</div>
           <div style="flex:1"><div class="m-name">${m.name}</div><div class="m-sub">${m.role||''}</div></div>
-          <span class="bdg ${BDG[m.perm]||'bdg-active'}">${BDG_LABEL[m.perm]||'Membro'}</span>
+          <span class="bdg ${BDG[m.perm]||'bdg-cong'}">${BDG_LABEL[m.perm]||'Congregado'}</span>
           ${A.isAdm()?'<span style="font-size:12px;color:var(--txt3);margin-left:4px">›</span>':''}
-        </div>`).join('') || '<div style="font-size:13px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum membro cadastrado ainda.</div>'}
+        </div>`).join('')
+      : '<div style="font-size:13px;color:var(--txt3);padding:12px 0;text-align:center">Nenhum membro cadastrado ainda.</div>'}
     </div>`;
   } catch(e){ console.error(e); }
 }
 
 window.openPermModal = (uid, name, currentPerm) => {
+  const perms = ['admin','tesoureiro','secretario','professor','member','congregado'];
   $('modal-body').innerHTML=`
     <h3>${name}</h3>
-    <div style="font-size:11px;color:var(--txt3);margin-bottom:12px">Selecione o nível de acesso:</div>
-    ${Object.entries(PERM_LABELS).map(([p,lbl])=>`
-      <div class="perm-opt ${currentPerm===p?'sel':''}" onclick="savePerm('${uid}','${p}')">
-        <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--txt)">${lbl}</div><div style="font-size:11px;color:var(--txt3)">${PERM_DESCS[p]}</div></div>
-        ${currentPerm===p?'<span style="color:var(--ac);font-size:15px;font-weight:600">✓</span>':''}
+    <div style="font-size:13px;color:var(--txt3);margin-bottom:14px">Selecione o cargo desta pessoa:</div>
+    ${perms.map(p=>`
+      <div class="perm-opt ${currentPerm===p?'sel':''}" onclick="savePerm('${uid}','${p}','${name}')">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--txt)">${PERM_LABELS[p]}</div>
+          <div style="font-size:12px;color:var(--txt3);margin-top:2px">${PERM_DESCS[p]}</div>
+        </div>
+        ${currentPerm===p?'<span style="color:var(--ac);font-size:16px;font-weight:600">✓</span>':''}
       </div>`).join('')}
     <button class="btn-cancel" onclick="closeModal()">Fechar</button>`;
   openModal();
 };
 
-window.savePerm = async (uid, perm) => {
+window.savePerm = async (uid, perm, name) => {
   await FS.setPerm(uid, perm);
+  // atualiza também o role no documento
+  const roleMap = {admin:'Admin',tesoureiro:'Tesoureiro',secretario:'Secretário(a)',professor:'Professor(a)',member:'Membro',congregado:'Congregado'};
+  await FS.update('members', uid, {perm, role: roleMap[perm]||'Congregado'});
   closeModal();
-  renderMembros();
-  if(A.isAdm()) renderAdmin();
+  renderAdmin();
+  if(A.isAdm()) renderMembros();
 };
 
 // ── INSCRIÇÕES ─────────────────────────────────────────────
@@ -1206,15 +1220,35 @@ window.openAtaDetail = (a) => {
 // ── ADMIN ──────────────────────────────────────────────────
 async function renderAdmin(){
   try {
-    const members = await FS.getAll('members');
-    $('adm-pend').innerHTML='<div style="font-size:12px;color:var(--txt3);padding:5px 0">Solicitações gerenciadas pelo Firebase Authentication.</div>';
-    $('adm-mem').innerHTML=members.map((m,i)=>`
-      <div class="m-item" style="cursor:pointer" onclick="openPermModal('${m.id}','${m.name}','${m.perm||'member'}')">
-        <div class="m-av" style="background:${avc(i)}22;color:${avc(i)}">${ini(m.name)}</div>
-        <div style="flex:1"><div class="m-name">${m.name}</div><div class="m-sub">${m.role||''}</div></div>
-        <span class="bdg ${BDG[m.perm]||'bdg-active'}">${BDG_LABEL[m.perm]||'Membro'}</span>
-        <span style="font-size:12px;color:var(--txt3);margin-left:4px">›</span>
-      </div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px">Nenhum membro cadastrado.</div>';
+    const all = await FS.getAll('members');
+    all.sort((a,b)=>(a.name||'').localeCompare(b.name||'','pt-BR'));
+
+    const pendentes = all.filter(m=>m.perm==='congregado'||!m.perm);
+    const definidos = all.filter(m=>m.perm&&m.perm!=='congregado');
+
+    $('adm-pend').innerHTML = pendentes.length
+      ? pendentes.map((m,i)=>`
+          <div style="background:var(--golds);border:.5px solid #e0c060;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:7px;cursor:pointer" onclick="openPermModal('${m.id}','${m.name}','congregado')">
+            <div class="m-av" style="background:#b87c1a22;color:#b87c1a;flex-shrink:0">${ini(m.name)}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:var(--txt)">${m.name}</div>
+              <div style="font-size:11px;color:var(--txt3)">${m.email||''}</div>
+              <div style="font-size:11px;color:#b87c1a;margin-top:2px;font-weight:500">⏳ Aguardando definição de cargo</div>
+            </div>
+            <span style="font-size:12px;color:var(--txt3)">›</span>
+          </div>`)
+        .join('')
+      : '<div style="font-size:13px;color:var(--txt3);padding:6px 0">Nenhuma pessoa aguardando definição.</div>';
+
+    $('adm-mem').innerHTML = definidos.length
+      ? definidos.map((m,i)=>`
+          <div class="m-item" style="cursor:pointer" onclick="openPermModal('${m.id}','${m.name}','${m.perm||'congregado'}')">
+            <div class="m-av" style="background:${avc(i)}22;color:${avc(i)}">${ini(m.name)}</div>
+            <div style="flex:1"><div class="m-name">${m.name}</div><div class="m-sub">${m.email||''}</div></div>
+            <span class="bdg ${BDG[m.perm]||'bdg-cong'}">${BDG_LABEL[m.perm]||'Congregado'}</span>
+            <span style="font-size:12px;color:var(--txt3);margin-left:4px">›</span>
+          </div>`).join('')
+      : '<div style="font-size:13px;color:var(--txt3);padding:8px 0">Nenhum membro com cargo definido ainda.</div>';
   } catch(e){ console.error(e); }
 }
 
