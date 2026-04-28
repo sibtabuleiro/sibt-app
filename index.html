@@ -125,11 +125,17 @@
 
   // ── Firestore helpers ────────────────────────────────
   window.FS = {
-    // lê coleção inteira — ordem crescente (mais antigo primeiro)
+    // lê coleção inteira — ordena no JS para não precisar de índice no Firestore
     getAll: async (col) => {
-      const q = query(collection(db, col), orderBy('createdAt','asc'));
-      const snap = await getDocs(q).catch(() => getDocs(collection(db, col)));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const snap = await getDocs(collection(db, col));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // ordena por createdAt crescente (mais antigo primeiro) no lado do cliente
+      docs.sort((a, b) => {
+        const ta = a.createdAt?.seconds || 0;
+        const tb = b.createdAt?.seconds || 0;
+        return ta - tb;
+      });
+      return docs;
     },
     // adiciona documento
     add: async (col, data) => {
@@ -1273,8 +1279,9 @@ window.saveEditEvt = async (id) => {
   closeModal();
   renderAgenda();
 };
+
+window.openAddMembresia = () => {
   $('modal-body').innerHTML=`
-    <h3>Membresia atualizada</h3>
     <div style="font-size:13px;color:var(--txt3);margin-bottom:10px;line-height:1.5">Adicione a lista de membros atualizada ou documento de membresia.</div>
     <label>Nome do documento</label>
     <input id="mb-n" placeholder="Ex: Lista de Membros — Junho 2026">
