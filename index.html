@@ -958,178 +958,181 @@ window.toggleTurma = (id) => {
 };
 
 // ── FINANÇAS ───────────────────────────────────────────────
+let finBalancetes = [];
+let finSelectedIdx = -1;
+
+function finFmt(v){ return 'R$ ' + Number(v||0).toLocaleString('pt-BR'); }
+
 async function renderFinancas(){
   const pixHTML=`
     <div class="pix-card">
-      <div class="pix-hd"><div class="pix-ico">🏦</div><div><div style="font-size:13px;font-weight:600;color:var(--txt)">Dados bancários — SIBT</div><div style="font-size:11px;color:var(--txt3)">Banco ${PIX.banco} · Ag. ${PIX.agencia} · C. ${PIX.conta}</div></div></div>
-      <div style="display:flex;gap:5px;margin-bottom:8px">
+      <div class="pix-hd"><div class="pix-ico">🏦</div><div><div style="font-size:14px;font-weight:600;color:var(--txt)">Pix e dados bancários</div><div style="font-size:12px;color:var(--txt3)">Para dízimos, ofertas e campanhas</div></div></div>
+      ${PIX.chaves.map((k,i)=>`
+        <div class="pix-row2" style="margin-bottom:8px">
+          <div class="pix-lbl2">Pix — ${k.tipo} · ${k.desc}</div>
+          <div class="pix-val2">${k.valor}</div>
+          <button class="copy-btn" id="cp-${i}" onclick="copyPix('${k.valor}',${i})">📋 Copiar chave</button>
+        </div>`).join('')}
+      <div style="display:flex;gap:6px;margin-top:4px">
         <div class="bank-pill" style="flex:1"><span>Banco</span>${PIX.banco}</div>
         <div class="bank-pill" style="flex:1"><span>Agência</span>${PIX.agencia}</div>
         <div class="bank-pill" style="flex:1"><span>Conta</span>${PIX.conta}</div>
       </div>
-      ${PIX.chaves.map((k,i)=>`
-        <div class="pix-row2">
-          <div class="pix-lbl2">⚡ Pix — ${k.tipo}</div>
-          <div class="pix-val2">${k.valor}</div>
-          <div class="pix-desc2">${k.desc}</div>
-          <button class="copy-btn" id="cp-${i}" onclick="copyPix('${k.valor}',${i})">📋 Copiar chave</button>
-        </div>`).join('')}
     </div>`;
 
   if(!A.isMem()){
-    $('fin-content').innerHTML=pixHTML+`<div class="card locked"><div class="lock-ico">📊</div><div class="lock-title">Balancetes e registros</div><div class="lock-sub">Acesso exclusivo para membros cadastrados.</div><div class="lock-acts"><button class="btn btn-primary" onclick="openLoginModal()">Entrar com Gmail</button></div></div>`;
+    $('fin-content').innerHTML=pixHTML+`<div class="card locked"><div class="lock-ico">📊</div><div class="lock-title">Relatórios financeiros</div><div class="lock-sub">Acesso exclusivo para membros cadastrados.</div><div class="lock-acts"><button class="btn btn-primary" onclick="openLoginModal()">Entrar com Gmail</button></div></div>`;
     return;
   }
 
-  const subtabs=`<div class="fin-subtab-row">
-    <button class="fin-subtab ${A.finSubtab==='resumo'?'active':''}" onclick="setFinTab('resumo')">Resumo</button>
-    <button class="fin-subtab ${A.finSubtab==='balancetes'?'active':''}" onclick="setFinTab('balancetes')">Balancetes</button>
-    <button class="fin-subtab ${A.finSubtab==='entradas'?'active':''}" onclick="setFinTab('entradas')">Entradas</button>
-    <button class="fin-subtab ${A.finSubtab==='saidas'?'active':''}" onclick="setFinTab('saidas')">Saídas</button>
-  </div>`;
-
   try {
-    const finance    = await FS.getAll('finance');
-    const balancetes = await FS.getAll('balancetes');
-    const ti = finance.filter(f=>!f.is_out).reduce((a,b)=>a+(b.val||0),0);
-    const to = finance.filter(f=>f.is_out).reduce((a,b)=>a+(b.val||0),0);
-    const pct = Math.min(100,Math.round(ti/META_VAL*100));
-    const maxVal = Math.max(...balancetes.map(b=>b.entradas||0),1);
+    finBalancetes = await FS.getAll('balancetes');
+    // ordena por data de criação mais antiga primeiro para o gráfico
+    finBalancetes.sort((a,b)=> (a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+    // seleciona o mais recente por padrão
+    if(finSelectedIdx===-1 || finSelectedIdx >= finBalancetes.length){
+      finSelectedIdx = Math.max(0, finBalancetes.length-1);
+    }
 
-    // helper para renderizar lista de documentos anexados
-    const renderDocs = (docs,tipo) => docs&&docs.length ? docs.map(d=>`
-      <div class="doc-item" style="margin-top:5px">
-        <div class="doc-ico ${d.tipo||tipo}">${d.tipo==='pdf'?'📄':d.tipo==='word'?'📝':'📊'}</div>
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div></div>
-        <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
-      </div>`).join('') : '';
+    const resumoHTML = finBalancetes.length ? finRenderResumo() : `
+      <div class="card">
+        <div class="ctitle">Resumo</div>
+        <div style="font-size:14px;color:var(--txt3);padding:12px 0;text-align:center">Nenhum relatório cadastrado ainda.<br>Toque em "+ Novo" para adicionar.</div>
+      </div>`;
 
-    let mainContent='';
-    if(A.finSubtab==='resumo'){
-      const bars=balancetes.slice(0,4).reverse().map(b=>{
-        const hIn=Math.max(5,Math.round(((b.entradas||0)/maxVal)*80));
-        const hOut=Math.max(3,Math.round(((b.saidas||0)/maxVal)*80));
-        return `<div class="fin-bar-wrap">
-          <div style="display:flex;align-items:flex-end;gap:2px;height:80px">
-            <div class="fin-bar" style="height:${hIn}px;background:var(--green);width:12px"></div>
-            <div class="fin-bar" style="height:${hOut}px;background:var(--red);width:12px"></div>
-          </div>
-          <div class="fin-bar-label">${(b.month||'').split(' ')[0]?.substring(0,3)||''}</div>
-        </div>`;}).join('');
+    const historicoHTML = finBalancetes.length >= 2 ? finRenderHistorico() : '';
 
-      mainContent=`
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-            <div class="ctitle" style="margin:0">Dashboard financeiro <span class="tag tag-mem">membros</span></div>
-            ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddLanc()">+ Lançar</button>':''}
-          </div>
-          <div class="srow" style="margin-bottom:8px">
-            <div class="sbox"><div class="slbl">Entradas</div><div class="sval g">${fmt(ti)}</div></div>
-            <div class="sbox"><div class="slbl">Saídas</div><div class="sval r">${fmt(to)}</div></div>
-          </div>
-          <div class="fin-row"><div class="fin-lbl">Saldo do mês</div><div class="fin-val in">${fmt(ti-to)}</div></div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-top:9px;margin-bottom:3px"><span>${META_NOME}</span><span>${pct}%</span></div>
-          <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:var(--green)"></div></div>
-          <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:10px;color:var(--txt3)"><span>${fmt(ti)}</span><span>Meta: ${fmt(META_VAL)}</span></div>
-          <div style="display:flex;gap:10px;margin:9px 0 0">
-            <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:2px;background:var(--green)"></div><span style="font-size:10px;color:var(--txt3)">Entradas</span></div>
-            <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:2px;background:var(--red)"></div><span style="font-size:10px;color:var(--txt3)">Saídas</span></div>
-          </div>
-          <div class="fin-chart">${bars}</div>
-        </div>`;
-
-    } else if(A.finSubtab==='balancetes'){
-      mainContent=`<div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="ctitle" style="margin:0">Balancetes <span class="tag tag-mem">membros</span></div>
-          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddBal()">+ Novo balancete</button>':''}
+    const relatoriosHTML=`
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="ctitle" style="margin:0">Relatórios mensais <span class="tag tag-mem">membros</span></div>
+          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddRelatorio()">+ Novo</button>':''}
         </div>
-        ${balancetes.map(b=>`
-          <div style="background:var(--surf2);border-radius:9px;padding:10px;margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-size:14px;font-weight:600;color:var(--txt)">${b.month||''}</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="font-size:13px;color:${(b.entradas||0)-(b.saidas||0)>=0?'var(--green)':'var(--red)'};font-weight:600">${(b.entradas||0)-(b.saidas||0)>=0?'+':''}${fmt((b.entradas||0)-(b.saidas||0))}</div>
-                ${A.canFin()?`<button class="btn-remove" onclick="removeItem('balancetes','${b.id}','balancete')">🗑</button>`:''}
+        ${finBalancetes.length ? [...finBalancetes].reverse().map(b=>{
+          const saldo=(b.entradas||0)-(b.saidas||0);
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:.5px solid var(--bdr)">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:500;color:var(--txt)">${b.month||''}</div>
+              <div style="font-size:12px;color:var(--txt3);margin-top:3px">
+                <span style="color:var(--green)">↑ ${finFmt(b.entradas)}</span>
+                <span style="margin:0 4px">·</span>
+                <span style="color:var(--red)">↓ ${finFmt(b.saidas)}</span>
+                <span style="margin:0 4px">·</span>
+                <span style="color:${saldo>=0?'var(--green)':'var(--red)'};font-weight:500">${saldo>=0?'+':''}${finFmt(saldo)}</span>
               </div>
             </div>
-            <div style="display:flex;gap:10px;margin-top:5px;font-size:13px">
-              <span style="color:var(--txt3)">Entradas: <b style="color:var(--green)">${fmt(b.entradas||0)}</b></span>
-              <span style="color:var(--txt3)">Saídas: <b style="color:var(--red)">${fmt(b.saidas||0)}</b></span>
+            <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:8px">
+              ${b.doc_url?`<a href="${b.doc_url}" target="_blank" style="background:var(--surf2);border:.5px solid var(--bdr);border-radius:var(--r);padding:6px 12px;font-size:12px;color:var(--txt2);text-decoration:none">↓ Baixar</a>`:''}
+              ${A.canFin()?`<button class="btn-remove" onclick="removeItem('balancetes','${b.id}','relatório')">🗑</button>`:''}
             </div>
-            <div class="prog-wrap" style="margin-top:6px"><div class="prog-bar" style="width:${Math.round((b.entradas||0)/((b.entradas||0)+(b.saidas||1))*100)}%;background:var(--green)"></div></div>
-            ${b.obs?`<div style="margin-top:5px;font-size:13px;color:var(--txt3);font-style:italic">${b.obs}</div>`:''}
-            ${renderDocs(b.docs,'xls')}
-            ${A.canFin()?`<button class="btn btn-outline" style="margin-top:8px;font-size:13px" onclick="openAddDocBal('${b.id}')">📎 Anexar documento</button>`:''}
-          </div>`).join('') || '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum balancete ainda.</div>'}
+          </div>`;
+        }).join('') : '<div style="font-size:14px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum relatório ainda.</div>'}
       </div>`;
 
-    } else if(A.finSubtab==='entradas'){
-      const ins=finance.filter(f=>!f.is_out);
-      // busca documento de entradas do Firestore
-      const docsEntradas = await FS.getAll('docs_financeiros').catch(()=>[]);
-      const docEnt = docsEntradas.filter(d=>d.tipo==='entradas');
-      mainContent=`<div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="ctitle" style="margin:0">Entradas detalhadas</div>
-          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddDocFinanceiro(\'entradas\')">📎 Lançar documento</button>':''}
-        </div>
-        ${docEnt.map(d=>`
-          <div class="doc-item" style="margin-bottom:8px;background:var(--greens);border-radius:9px;padding:9px 11px">
-            <div class="doc-ico xls">📊</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
-              <div style="font-size:11px;color:var(--txt3)">${d.date_ref||''}</div>
-            </div>
-            <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
-            ${A.canFin()?`<button class="btn-remove" style="margin-left:4px" onclick="removeItem('docs_financeiros','${d.id}','documento')">🗑</button>`:''}
-          </div>`).join('')}
-        <div style="border-top:.5px solid var(--bdr);padding-top:8px;margin-top:4px">
-          ${ins.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${A.canFin()?f.who:'Membro'} · ${f.date_ref||''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="fin-val in">+ ${fmt(f.val||0)}</div>${A.canFin()?`<button class="btn-remove" onclick="removeItem('finance','${f.id}','entrada')">🗑</button>`:''}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px">
-          <div style="font-size:13px;font-weight:600;color:var(--txt)">Total de entradas</div>
-          <div style="font-size:15px;font-weight:700;color:var(--green)">${fmt(ti)}</div>
-        </div>
-      </div>`;
-    } else {
-      const outs=finance.filter(f=>f.is_out);
-      const docsFinanceiros = await FS.getAll('docs_financeiros').catch(()=>[]);
-      const docSaid = docsFinanceiros.filter(d=>d.tipo==='saidas');
-      mainContent=`<div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="ctitle" style="margin:0">Saídas detalhadas</div>
-          ${A.canFin()?'<button class="btn btn-sm btn-primary" onclick="openAddDocFinanceiro(\'saidas\')">📎 Lançar documento</button>':''}
-        </div>
-        ${docSaid.map(d=>`
-          <div class="doc-item" style="margin-bottom:8px;background:var(--reds);border-radius:9px;padding:9px 11px">
-            <div class="doc-ico xls">📊</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div>
-              <div style="font-size:11px;color:var(--txt3)">${d.date_ref||''}</div>
-            </div>
-            <button class="doc-btn" onclick="window.open('${d.url}','_blank')">↓ Baixar</button>
-            ${A.canFin()?`<button class="btn-remove" style="margin-left:4px" onclick="removeItem('docs_financeiros','${d.id}','documento')">🗑</button>`:''}
-          </div>`).join('')}
-        <div style="border-top:.5px solid var(--bdr);padding-top:8px;margin-top:4px">
-          ${outs.map(f=>`<div class="fin-row"><div><div class="fin-lbl">${f.type||''}</div><div class="fin-sub">${f.date_ref||''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="fin-val out">− ${fmt(f.val||0)}</div>${A.canFin()?`<button class="btn-remove" onclick="removeItem('finance','${f.id}','saída')">🗑</button>`:''}</div></div>`).join('') || '<div style="font-size:12px;color:var(--txt3);padding:8px 0;text-align:center">Nenhum lançamento ainda.</div>'}
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:9px 0 0;border-top:.5px solid var(--bdr);margin-top:4px">
-          <div style="font-size:13px;font-weight:600;color:var(--txt)">Total de saídas</div>
-          <div style="font-size:15px;font-weight:700;color:var(--red)">${fmt(to)}</div>
-        </div>
-      </div>`;
-    }
-    $('fin-content').innerHTML=pixHTML+subtabs+mainContent;
-  } catch(e){ $('fin-content').innerHTML=pixHTML+'<div style="font-size:12px;color:var(--txt3);padding:8px">Conecte o Firebase para ver os dados financeiros.</div>'; }
+    $('fin-content').innerHTML = pixHTML + resumoHTML + historicoHTML + relatoriosHTML;
+  } catch(e){
+    $('fin-content').innerHTML=pixHTML+'<div style="font-size:13px;color:var(--txt3);padding:8px">Erro ao carregar. Verifique a conexão.</div>';
+  }
 }
 
+function finRenderResumo(){
+  const b = finBalancetes[finSelectedIdx] || finBalancetes[finBalancetes.length-1];
+  if(!b) return '';
+  const saldo = (b.entradas||0)-(b.saidas||0);
+  const pct   = Math.min(100, Math.round((b.entradas||0)/META_VAL*100));
+  return `
+    <div class="card" id="fin-resumo-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ctitle" style="margin:0">Resumo</div>
+        <div style="font-size:14px;font-weight:500;color:var(--ac)">${b.month||''}</div>
+      </div>
+      <div class="srow" style="margin-bottom:12px">
+        <div class="sbox"><div class="slbl">Entradas</div><div class="sval g">${finFmt(b.entradas)}</div></div>
+        <div class="sbox"><div class="slbl">Saídas</div><div class="sval r">${finFmt(b.saidas)}</div></div>
+      </div>
+      <div class="fin-row"><div class="fin-lbl">Saldo</div><div class="fin-val ${saldo>=0?'in':'out'}">${saldo>=0?'+':''}${finFmt(saldo)}</div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt3);margin-top:10px;margin-bottom:4px"><span>${META_NOME}</span><span>${pct}%</span></div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:var(--green)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--txt3)"><span>${finFmt(b.entradas)} arrecadados</span><span>Meta: ${finFmt(META_VAL)}</span></div>
+    </div>`;
+}
+
+function finRenderHistorico(){
+  const ultimos6 = finBalancetes.slice(-6);
+  const maxVal   = Math.max(...ultimos6.map(b=>b.entradas||0), 1);
+  const bars = ultimos6.map((b,i)=>{
+    const realIdx = finBalancetes.length - ultimos6.length + i;
+    const sel     = realIdx === finSelectedIdx;
+    const hIn     = Math.max(8, Math.round(((b.entradas||0)/maxVal)*86));
+    const hOut    = Math.max(4, Math.round(((b.saidas||0)/maxVal)*86));
+    const lbl     = (b.month||'').split(' ')[0]?.substring(0,3)||'';
+    return `<div onclick="finSelectMes(${realIdx})" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border-radius:var(--r);padding:5px 2px;background:${sel?'var(--surf2)':'transparent'};transition:background .15s">
+      <div style="display:flex;align-items:flex-end;gap:2px;height:86px">
+        <div style="width:13px;height:${hIn}px;background:${sel?'#1a9268':'#6bbda0'};border-radius:3px 3px 0 0;transition:all .2s"></div>
+        <div style="width:13px;height:${hOut}px;background:${sel?'#c53030':'#e08080'};border-radius:3px 3px 0 0;transition:all .2s"></div>
+      </div>
+      <div style="font-size:11px;color:${sel?'var(--ac)':'var(--txt3)'};font-weight:${sel?'500':'400'}">${lbl}</div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="ctitle" style="margin-bottom:6px">Histórico mensal</div>
+      <div style="font-size:12px;color:var(--txt3);margin-bottom:10px">Toque em um mês para ver o resumo</div>
+      <div style="display:flex;gap:4px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:5px;margin-right:8px"><div style="width:10px;height:10px;border-radius:2px;background:#1a9268"></div><span style="font-size:12px;color:var(--txt3)">Entradas</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#c53030"></div><span style="font-size:12px;color:var(--txt3)">Saídas</span></div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:110px;padding:0 2px">${bars}</div>
+    </div>`;
+}
+
+window.finSelectMes = (idx) => {
+  finSelectedIdx = idx;
+  // atualiza só o card de resumo e redesenha o histórico sem recarregar tudo
+  const resumoCard = document.getElementById('fin-resumo-card');
+  if(resumoCard) resumoCard.outerHTML = finRenderResumo();
+  // redesenha histórico para atualizar barras
+  const histCard = document.querySelector('#fin-content .card:nth-child(3)');
+  if(histCard && finBalancetes.length>=2) histCard.outerHTML = finRenderHistorico();
+};
+
 window.setFinTab = t => { A.finSubtab=t; renderFinancas(); };
+
 window.copyPix = (val,i) => {
   navigator.clipboard.writeText(val).catch(()=>{});
   const b=document.getElementById(`cp-${i}`); if(!b)return;
   b.textContent='✅ Copiado!'; b.classList.add('ok');
   setTimeout(()=>{b.textContent='📋 Copiar chave';b.classList.remove('ok')},2000);
+};
+
+window.openAddRelatorio = () => {
+  $('modal-body').innerHTML=`
+    <h3>Novo relatório mensal</h3>
+    <div style="font-size:13px;color:var(--txt3);margin-bottom:12px;line-height:1.5">Preencha os totais do mês e anexe o link da planilha do Drive.</div>
+    <label>Mês e ano</label>
+    <input id="r-month" placeholder="Ex: Junho 2026">
+    <div class="modal-row">
+      <div><label>Total de entradas (R$)</label><input id="r-in" type="number" placeholder="0"></div>
+      <div><label>Total de saídas (R$)</label><input id="r-out" type="number" placeholder="0"></div>
+    </div>
+    <label>Link do documento (Google Drive, PDF...)</label>
+    <input id="r-url" placeholder="https://drive.google.com/...">
+    <div class="upload-area"><div style="font-size:13px;color:var(--txt3);line-height:1.5">📎 Cole o link público da planilha acima<br><span style="font-size:11px">Google Drive: Compartilhar → "Qualquer pessoa com o link"</span></div></div>
+    <button class="btn btn-primary" style="margin-top:13px" onclick="saveRelatorio()">Salvar relatório</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>`;
+  openModal();
+};
+
+window.saveRelatorio = async () => {
+  const month = $('r-month').value.trim();
+  const entradas = parseFloat($('r-in').value)||0;
+  const saidas   = parseFloat($('r-out').value)||0;
+  if(!month){ alert('Informe o mês e ano.'); return; }
+  await FS.add('balancetes',{month, entradas, saidas, doc_url: $('r-url').value.trim()||null, doc_name: month});
+  finSelectedIdx = -1;
+  closeModal();
+  renderFinancas();
 };
 
 // ── ATAS ───────────────────────────────────────────────────
