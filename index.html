@@ -58,19 +58,26 @@
   };
 
   // ── Auth listener ────────────────────────────────────
-  // Primeiro trata o retorno do redirect (se vier de um login)
+  // Trata o retorno do redirect ANTES de qualquer outra coisa
   getRedirectResult(auth).then(async (result) => {
     if (result?.user) {
-      // login via redirect completado — o onAuthStateChanged abaixo vai cuidar do resto
-      console.log('Login via redirect:', result.user.email);
+      console.log('Login via redirect OK:', result.user.email);
+      localStorage.setItem('sibt-visited', '1');
+      const ws = document.getElementById('screen-welcome');
+      if(ws) ws.style.display = 'none';
     }
   }).catch((e) => {
     console.error('Redirect result error:', e);
   });
 
   onAuthStateChanged(auth, async (user) => {
+    window.APP.authReady = true;
     if (user) {
       window.APP.user = user;
+      // usuário logado — marca como visitado e fecha boas-vindas
+      localStorage.setItem('sibt-visited', '1');
+      const ws = document.getElementById('screen-welcome');
+      if(ws) ws.style.display = 'none';
       try {
         const ref = doc(db, 'members', user.uid);
         const snap = await getDoc(ref);
@@ -108,9 +115,9 @@
   // ── Login / Logout ───────────────────────────────────
   window.doLogin = async () => {
     try {
-      // usa redirect — funciona em todos os navegadores e celulares
+      // marca como visitado ANTES do redirect para evitar loop ao voltar
+      localStorage.setItem('sibt-visited', '1');
       await signInWithRedirect(auth, gProvider);
-      // a página vai redirecionar para o Google e voltar automaticamente
     } catch(e) {
       console.error('Login error:', e);
       alert('Erro ao entrar. Tente novamente.');
@@ -661,8 +668,12 @@ function updateTop(){
 
 window.renderAll = () => {
   updateTop();
-  // Mostra tela de boas-vindas para quem nunca visitou e não está logado
-  if(!A.user && !localStorage.getItem('sibt-visited')){
+  if(A.user){
+    // logado — fecha boas-vindas e vai para o app
+    const ws = document.getElementById('screen-welcome');
+    if(ws) ws.style.display = 'none';
+  } else if(A.authReady && !localStorage.getItem('sibt-visited')){
+    // auth confirmou que não há usuário E nunca visitou — mostra boas-vindas
     showWelcome();
   }
   goScreen(A.curScreen, null);
@@ -757,6 +768,7 @@ window.closeWelcome = () => {
   const ws = document.getElementById('screen-welcome');
   if(ws) ws.style.display = 'none';
   localStorage.setItem('sibt-visited', '1');
+  sessionStorage.removeItem('sibt-redirecting');
 };
 
 // ── HOME ───────────────────────────────────────────────────
@@ -1921,11 +1933,8 @@ $('modal-bg').addEventListener('click', e=>{ if(e.target===$('modal-bg')) closeM
   if(img) img.src = LOGO_URI;
 })();
 
-// Mostra welcome se nunca visitou
-if(!localStorage.getItem('sibt-visited')){
-  setTimeout(()=>{ if(!A.user) showWelcome(); }, 800);
-}
-
+// NÃO mostra boas-vindas aqui — deixa o onAuthStateChanged decidir
+// para evitar loop no redirect do Google
 updateTop();
 renderHome();
 </script>
